@@ -19,6 +19,7 @@ import InputAdornment from "@material-ui/core/InputAdornment";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
 import Snackbar from "@material-ui/core/Snackbar";
+import LinearProgress from "@material-ui/core/LinearProgress";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
@@ -39,6 +40,7 @@ const BigNumber = require("bignumber.js");
 function Dashboard() {
   // const { state, dispatch } = useContext(store);
   const { account, library } = useWeb3React();
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [supplyDialogOpen, setSupplyDialogOpen] = useState(false);
   const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
   const [enterMarketDialogOpen, setEnterMarketDialogOpen] = useState(false);
@@ -80,6 +82,10 @@ function Dashboard() {
       // );
 
       const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
+
+      if (chainIdToName[parseInt(library?.provider?.chainId)] !== "kovan") {
+        setWarningDialogOpen(true);
+      }
 
       const allMarkets = await Compound.eth.read(
         comptrollerAddress,
@@ -960,6 +966,22 @@ function Dashboard() {
     );
   };
 
+  const WarningDialog = (props) => {
+    return (
+      <Dialog
+        open={warningDialogOpen}
+        onClose={() => setWarningDialogOpen(false)}
+      >
+        <DialogTitle style={{ padding: "50px 100px 10px 100px" }}>
+          Wrong Network Detected
+        </DialogTitle>
+        <DialogContent style={{ padding: "10px 100px 50px 100px" }}>
+          Please switch to Kovan testnet
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   const SupplyDialog = (props) => {
     const [tabValue, setTabValue] = useState(0);
     const [supplyAmount, setSupplyAmount] = useState("");
@@ -1597,6 +1619,7 @@ function Dashboard() {
 
   return (
     <Aux>
+      <WarningDialog />
       <SupplyDialog
         open={supplyDialogOpen}
         selectedMarketDetails={selectedMarketDetails}
@@ -1611,6 +1634,12 @@ function Dashboard() {
         open={enterMarketDialogOpen}
         selectedMarketDetails={selectedMarketDetails}
         generalDetails={generalDetails}
+      />
+      <LinearProgress
+        style={{
+          visibility: generalDetails.netApy ? "hidden" : "visible",
+          margin: "0px 0px 8px 0px",
+        }}
       />
       <Row>
         <Col xs={12} md={6}>
