@@ -97,16 +97,14 @@ function AdminLayout() {
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="mr-auto"></Nav>
               <Nav className="mr-true">
-                <Nav.Link href="https://rewards.percent.finance">
-                  Rewards
-                </Nav.Link>
+                <Nav.Link href="https://percent.finance">Rewards</Nav.Link>
                 <Nav.Link href="https://twitter.com/PercentFinance">
                   Twitter
                 </Nav.Link>
                 <Nav.Link href="https://medium.com/percent-finance">
                   Medium
                 </Nav.Link>
-                <Nav.Link href="https://discord.com/">Discord</Nav.Link>
+                <Nav.Link href="https://discord.gg/3sxWhH3">Discord</Nav.Link>
               </Nav>
               <ConnectButton />
             </Navbar.Collapse>
