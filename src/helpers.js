@@ -6,9 +6,11 @@ export const eX = (value, x) => {
   return new BigNumber(`${value}e${x}`);
 };
 
-export const convertToMillionsStringIfLarge = (value) => {
-  if (+value > 1e3) {
+export const convertToLargeNumberRepresentation = (value) => {
+  if (+value >= 1e5) {
     return `${eX(value.toString(), -6)}M`;
+  } else if (+value >= 1e2) {
+    return `${eX(value.toString(), -3)}K`;
   } else {
     return value.toString();
   }

@@ -26,12 +26,13 @@ import FormHelperText from "@material-ui/core/FormHelperText";
 import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
+import Snackbar from "@material-ui/core/Snackbar";
 import { AccessAlarm, ThreeDRotation } from "@material-ui/icons";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
   eX,
-  convertToMillionsStringIfLarge,
+  convertToLargeNumberRepresentation,
   roundToDecimalPlaces,
   emptyStringIfNullish,
   zeroStringIfNullish,
@@ -140,12 +141,16 @@ function Dashboard() {
               supplyAndBorrowBalance?.borrowBalance
             );
 
+            const isEnterMarket = enteredMarkets.includes(pTokenAddress);
+
             const collateralFactor = await getCollateralFactor(
               comptrollerAddress,
               pTokenAddress
             );
             totalBorrowLimit = totalBorrowLimit.plus(
-              supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
+              isEnterMarket
+                ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
+                : 0
             );
 
             const supplyApy = await getSupplyApy(pTokenAddress);
@@ -155,6 +160,11 @@ function Dashboard() {
             );
             yearBorrowInterest = yearBorrowInterest.plus(
               supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
+            );
+
+            const underlyingAmount = await getUnderlyingAmount(
+              pTokenAddress,
+              decimals
             );
 
             return {
@@ -180,10 +190,10 @@ function Dashboard() {
               borrowBalanceInTokenUnit:
                 supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
               borrowBalance: supplyAndBorrowBalance?.borrowBalance,
-              isEnterMarket: enteredMarkets.includes(pTokenAddress),
-              liquidity:
-                +(await getUnderlyingAmount(pTokenAddress, decimals)) *
-                +underlyingPrice,
+              isEnterMarket,
+              underlyingAmount,
+              underlyingPrice,
+              liquidity: +underlyingAmount * +underlyingPrice,
               decimals,
             };
           })
@@ -261,15 +271,20 @@ function Dashboard() {
       const blocksPerDay = 4 * 60 * 24;
       const daysPerYear = 365;
 
-      const supplyRatePerBlock = await Compound.eth.read(
-        address,
-        "function supplyRatePerBlock() returns (uint256)",
-        [], // [optional] parameters
-        {
-          network: chainIdToName[parseInt(library.provider.chainId)],
-          _compoundProvider: library,
-        } // [optional] call options, provider, network, ethers.js "overrides"
-      );
+      let supplyRatePerBlock;
+      try {
+        supplyRatePerBlock = await Compound.eth.read(
+          address,
+          "function supplyRatePerBlock() returns (uint256)",
+          [], // [optional] parameters
+          {
+            network: chainIdToName[parseInt(library.provider.chainId)],
+            _compoundProvider: library,
+          } // [optional] call options, provider, network, ethers.js "overrides"
+        );
+      } catch (e) {
+        supplyRatePerBlock = new BigNumber(0);
+      }
 
       const supplyApy =
         (Math.pow(
@@ -288,15 +303,20 @@ function Dashboard() {
       const blocksPerDay = 4 * 60 * 24;
       const daysPerYear = 365;
 
-      const borrowRatePerBlock = await Compound.eth.read(
-        address,
-        "function borrowRatePerBlock() returns (uint256)",
-        [], // [optional] parameters
-        {
-          network: chainIdToName[parseInt(library.provider.chainId)],
-          _compoundProvider: library,
-        } // [optional] call options, provider, network, ethers.js "overrides"
-      );
+      let borrowRatePerBlock;
+      try {
+        borrowRatePerBlock = await Compound.eth.read(
+          address,
+          "function borrowRatePerBlock() returns (uint256)",
+          [], // [optional] parameters
+          {
+            network: chainIdToName[parseInt(library.provider.chainId)],
+            _compoundProvider: library,
+          } // [optional] call options, provider, network, ethers.js "overrides"
+        );
+      } catch (e) {
+        borrowRatePerBlock = new BigNumber(0);
+      }
 
       const borrowApy =
         (Math.pow(
@@ -472,26 +492,41 @@ function Dashboard() {
     }
   };
 
-  const handleEnable = async (underlyingAddress, pTokenAddress) => {
-    return await Compound.eth.trx(
-      underlyingAddress,
-      "approve",
-      [pTokenAddress, MaxUint256], // [optional] parameters
-      {
-        network: chainIdToName[parseInt(library.provider.chainId)],
-        provider: library.provider,
-        gasLimitEnable,
-        gasPrice: gasPrice.toString(),
-        abi: compoundConstants.abi.cErc20,
-      } // [optional] call options, provider, network, ethers.js "overrides"
-    );
+  const handleEnable = async (
+    underlyingAddress,
+    pTokenAddress,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
+  ) => {
+    try {
+      const tx = await Compound.eth.trx(
+        underlyingAddress,
+        "approve",
+        [pTokenAddress, MaxUint256], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          provider: library.provider,
+          gasLimitEnable,
+          gasPrice: gasPrice.toString(),
+          abi: compoundConstants.abi.cErc20,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
   const handleSupply = async (
     underlyingAddress,
     pTokenAddress,
     amount,
-    decimals
+    decimals,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
   ) => {
     let parameters = [];
     let options = {
@@ -509,19 +544,29 @@ function Dashboard() {
       options.abi = compoundConstants.abi.cErc20;
     }
 
-    return await Compound.eth.trx(
-      pTokenAddress,
-      "mint",
-      parameters, // [optional] parameters
-      options // [optional] call options, provider, network, ethers.js "overrides"
-    );
+    try {
+      const tx = await Compound.eth.trx(
+        pTokenAddress,
+        "mint",
+        parameters, // [optional] parameters
+        options // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
   const handleWithdraw = async (
     underlyingAddress,
     pTokenAddress,
     amount,
-    decimals
+    decimals,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
   ) => {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
@@ -536,19 +581,29 @@ function Dashboard() {
       options.abi = compoundConstants.abi.cErc20;
     }
 
-    return await Compound.eth.trx(
-      pTokenAddress,
-      "redeemUnderlying",
-      [eX(amount, decimals).toString()], // [optional] parameters
-      options // [optional] call options, provider, network, ethers.js "overrides"
-    );
+    try {
+      const tx = await Compound.eth.trx(
+        pTokenAddress,
+        "redeemUnderlying",
+        [eX(amount, decimals).toString()], // [optional] parameters
+        options // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
   const handleBorrow = async (
     underlyingAddress,
     pTokenAddress,
     amount,
-    decimals
+    decimals,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
   ) => {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
@@ -563,19 +618,29 @@ function Dashboard() {
       options.abi = compoundConstants.abi.cErc20;
     }
 
-    return await Compound.eth.trx(
-      pTokenAddress,
-      "borrow",
-      [eX(amount, decimals).toString()], // [optional] parameters
-      options // [optional] call options, provider, network, ethers.js "overrides"
-    );
+    try {
+      const tx = await Compound.eth.trx(
+        pTokenAddress,
+        "borrow",
+        [eX(amount, decimals).toString()], // [optional] parameters
+        options // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
   const handleRepay = async (
     underlyingAddress,
     pTokenAddress,
     amount,
-    decimals
+    decimals,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
   ) => {
     let parameters = [];
     let options = {
@@ -593,42 +658,74 @@ function Dashboard() {
       options.abi = compoundConstants.abi.cErc20;
     }
 
-    return await Compound.eth.trx(
-      pTokenAddress,
-      "repayBorrow",
-      parameters, // [optional] parameters
-      options // [optional] call options, provider, network, ethers.js "overrides"
-    );
+    try {
+      const tx = await Compound.eth.trx(
+        pTokenAddress,
+        "repayBorrow",
+        parameters, // [optional] parameters
+        options // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
-  const handleEnterMarket = async (pTokenAddress) => {
-    return await Compound.eth.trx(
-      generalDetails.comptrollerAddress,
-      "enterMarkets",
-      [[pTokenAddress]], // [optional] parameters
-      {
-        network: chainIdToName[parseInt(library.provider.chainId)],
-        provider: library.provider,
-        gasLimitEnterMarket,
-        gasPrice: gasPrice.toString(),
-        abi: compoundConstants.abi.Comptroller,
-      } // [optional] call options, provider, network, ethers.js "overrides"
-    );
+  const handleEnterMarket = async (
+    pTokenAddress,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
+  ) => {
+    try {
+      const tx = await Compound.eth.trx(
+        generalDetails.comptrollerAddress,
+        "enterMarkets",
+        [[pTokenAddress]], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          provider: library.provider,
+          gasLimitEnterMarket,
+          gasPrice: gasPrice.toString(),
+          abi: compoundConstants.abi.Comptroller,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
-  const handleExitMarket = async (pTokenAddress) => {
-    return await Compound.eth.trx(
-      generalDetails.comptrollerAddress,
-      "exitMarket",
-      [pTokenAddress], // [optional] parameters
-      {
-        network: chainIdToName[parseInt(library.provider.chainId)],
-        provider: library.provider,
-        gasLimitEnterMarket,
-        gasPrice: gasPrice.toString(),
-        abi: compoundConstants.abi.Comptroller,
-      } // [optional] call options, provider, network, ethers.js "overrides"
-    );
+  const handleExitMarket = async (
+    pTokenAddress,
+    setTxSnackbarMessage,
+    setTxSnackbarOpen
+  ) => {
+    try {
+      const tx = await Compound.eth.trx(
+        generalDetails.comptrollerAddress,
+        "exitMarket",
+        [pTokenAddress], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          provider: library.provider,
+          gasLimitEnterMarket,
+          gasPrice: gasPrice.toString(),
+          abi: compoundConstants.abi.Comptroller,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+      console.log("tx", JSON.stringify(tx));
+      setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
+    } catch (e) {
+      setTxSnackbarMessage("Error occurred!");
+    }
+
+    setTxSnackbarOpen(true);
   };
 
   const updateGasPrice = async () => {
@@ -742,7 +839,7 @@ function Dashboard() {
           </h6>
         </td>
         <td>
-          <h6 className="text-muted">{`$${convertToMillionsStringIfLarge(
+          <h6 className="text-muted">{`$${convertToLargeNumberRepresentation(
             new BigNumber(props.details.liquidity).precision(4)
           )}`}</h6>
         </td>
@@ -876,15 +973,43 @@ function Dashboard() {
     const [tabValue, setTabValue] = useState(0);
     const [supplyAmount, setSupplyAmount] = useState("");
     const [withdrawAmount, setWithdrawAmount] = useState("");
+    const [supplyValidationMessage, setSupplyValidationMessage] = useState("");
+    const [withdrawValidationMessage, setWithdrawValidationMessage] = useState(
+      ""
+    );
+    const [txSnackbarOpen, setTxSnackbarOpen] = useState(false);
+    const [txSnackbarMessage, setTxSnackbarMessage] = useState("");
 
     const handleTabChange = (event, newValue) => {
       setTabValue(newValue);
     };
     const handleSupplyAmountChange = (event) => {
-      setSupplyAmount(event.target.value);
+      const amount = event.target.value;
+      setSupplyAmount(amount);
+
+      if (amount <= 0) {
+        setSupplyValidationMessage("Amount must be > 0");
+      } else if (amount > +props.selectedMarketDetails.walletBalance) {
+        setSupplyValidationMessage("Amount must be <= balance");
+      } else {
+        setSupplyValidationMessage("");
+      }
     };
     const handleWithdrawAmountChange = (event) => {
-      setWithdrawAmount(event.target.value);
+      const amount = event.target.value;
+      setWithdrawAmount(amount);
+
+      if (amount <= 0) {
+        setWithdrawValidationMessage("Amount must be > 0");
+      } else if (
+        amount > +props.selectedMarketDetails.supplyBalanceInTokenUnit
+      ) {
+        setWithdrawValidationMessage("Amount must be <= protocol balance");
+      } else if (amount > +props.selectedMarketDetails.underlyingAmount) {
+        setWithdrawValidationMessage("Amount must be <= liquidity");
+      } else {
+        setWithdrawValidationMessage("");
+      }
     };
 
     return (
@@ -935,6 +1060,7 @@ function Dashboard() {
                               props.selectedMarketDetails.walletBalance
                             ).toString()
                           );
+                          setSupplyValidationMessage("");
                         }}
                       >
                         Max
@@ -942,8 +1068,9 @@ function Dashboard() {
                     ),
                   }}
                 />
-                <br />
-                <br />
+                <div style={{ height: "30px", color: "red" }}>
+                  {supplyValidationMessage}
+                </div>
                 <List>
                   <DialogSupplyRatesSection
                     selectedMarketDetails={props.selectedMarketDetails}
@@ -964,14 +1091,16 @@ function Dashboard() {
                       <Button
                         variant="primary"
                         size="lg"
-                        disabled={!supplyAmount}
+                        disabled={!supplyAmount || supplyValidationMessage}
                         block
                         onClick={() => {
                           handleSupply(
                             props.selectedMarketDetails.underlyingAddress,
                             props.selectedMarketDetails.pTokenAddress,
                             supplyAmount,
-                            props.selectedMarketDetails.decimals
+                            props.selectedMarketDetails.decimals,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen
                           );
                         }}
                       >
@@ -985,7 +1114,9 @@ function Dashboard() {
                         onClick={() => {
                           handleEnable(
                             props.selectedMarketDetails.underlyingAddress,
-                            props.selectedMarketDetails.pTokenAddress
+                            props.selectedMarketDetails.pTokenAddress,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen
                           );
                         }}
                       >
@@ -1034,8 +1165,9 @@ function Dashboard() {
                   //   ),
                   // }}
                 />
-                <br />
-                <br />
+                <div style={{ height: "30px", color: "red" }}>
+                  {withdrawValidationMessage}
+                </div>
                 <List>
                   <DialogSupplyRatesSection
                     selectedMarketDetails={props.selectedMarketDetails}
@@ -1050,14 +1182,16 @@ function Dashboard() {
                     <Button
                       variant="primary"
                       size="lg"
-                      disabled={!withdrawAmount}
+                      disabled={!withdrawAmount || withdrawValidationMessage}
                       block
                       onClick={() => {
                         handleWithdraw(
                           props.selectedMarketDetails.underlyingAddress,
                           props.selectedMarketDetails.pTokenAddress,
                           withdrawAmount,
-                          props.selectedMarketDetails.decimals
+                          props.selectedMarketDetails.decimals,
+                          setTxSnackbarMessage,
+                          setTxSnackbarOpen
                         );
                       }}
                     >
@@ -1082,6 +1216,16 @@ function Dashboard() {
             </div>
           )}
         </DialogContent>
+        <TxSnackbar
+          open={txSnackbarOpen}
+          message={txSnackbarMessage}
+          onClose={(event, reason) => {
+            if (reason === "clickaway") {
+              return;
+            }
+            setTxSnackbarOpen(false);
+          }}
+        />
       </Dialog>
     );
   };
@@ -1090,15 +1234,46 @@ function Dashboard() {
     const [tabValue, setTabValue] = useState(0);
     const [borrowAmount, setBorrowAmount] = useState("");
     const [repayAmount, setRepayAmount] = useState("");
+    const [borrowValidationMessage, setBorrowValidationMessage] = useState("");
+    const [repayValidationMessage, setRepayValidationMessage] = useState("");
+    const [txSnackbarOpen, setTxSnackbarOpen] = useState(false);
+    const [txSnackbarMessage, setTxSnackbarMessage] = useState("");
 
     const handleTabChange = (event, newValue) => {
       setTabValue(newValue);
     };
     const handleBorrowAmountChange = (event) => {
-      setBorrowAmount(event.target.value);
+      const amount = event.target.value;
+      setBorrowAmount(amount);
+
+      if (amount <= 0) {
+        setBorrowValidationMessage("Amount must be > 0");
+      } else if (
+        amount * +props.selectedMarketDetails.underlyingPrice >
+        +props.generalDetails.totalBorrowLimit
+      ) {
+        setBorrowValidationMessage("Amount must be <= borrow limit");
+      } else if (amount > +props.selectedMarketDetails.underlyingAmount) {
+        setBorrowValidationMessage("Amount must be <= liquidity");
+      } else {
+        setBorrowValidationMessage("");
+      }
     };
     const handleRepayAmountChange = (event) => {
-      setRepayAmount(event.target.value);
+      const amount = event.target.value;
+      setRepayAmount(amount);
+
+      if (amount <= 0) {
+        setRepayValidationMessage("Amount must be > 0");
+      } else if (
+        amount > +props.selectedMarketDetails.borrowBalanceInTokenUnit
+      ) {
+        setRepayValidationMessage("Amount must be <= protocol balance");
+      } else if (amount > +props.selectedMarketDetails.walletBalance) {
+        setRepayValidationMessage("Amount must be <= balance");
+      } else {
+        setRepayValidationMessage("");
+      }
     };
 
     return (
@@ -1156,8 +1331,9 @@ function Dashboard() {
                   //   ),
                   // }}
                 />
-                <br />
-                <br />
+                <div style={{ height: "30px", color: "red" }}>
+                  {borrowValidationMessage}
+                </div>
                 <List>
                   <DialogBorrowRatesSection
                     selectedMarketDetails={props.selectedMarketDetails}
@@ -1172,14 +1348,16 @@ function Dashboard() {
                     <Button
                       variant="primary"
                       size="lg"
-                      disabled={!borrowAmount}
+                      disabled={!borrowAmount || borrowValidationMessage}
                       block
                       onClick={() => {
                         handleBorrow(
                           props.selectedMarketDetails.underlyingAddress,
                           props.selectedMarketDetails.pTokenAddress,
                           borrowAmount,
-                          props.selectedMarketDetails.decimals
+                          props.selectedMarketDetails.decimals,
+                          setTxSnackbarMessage,
+                          setTxSnackbarOpen
                         );
                       }}
                     >
@@ -1220,6 +1398,7 @@ function Dashboard() {
                               props.selectedMarketDetails.walletBalance
                             ).toString()
                           );
+                          setRepayValidationMessage("");
                         }}
                       >
                         Max
@@ -1227,8 +1406,9 @@ function Dashboard() {
                     ),
                   }}
                 />
-                <br />
-                <br />
+                <div style={{ height: "30px", color: "red" }}>
+                  {repayValidationMessage}
+                </div>
                 <List>
                   <DialogBorrowRatesSection
                     selectedMarketDetails={props.selectedMarketDetails}
@@ -1249,14 +1429,16 @@ function Dashboard() {
                       <Button
                         variant="primary"
                         size="lg"
-                        disabled={!repayAmount}
+                        disabled={!repayAmount || repayValidationMessage}
                         block
                         onClick={() => {
                           handleRepay(
                             props.selectedMarketDetails.underlyingAddress,
                             props.selectedMarketDetails.pTokenAddress,
                             repayAmount,
-                            props.selectedMarketDetails.decimals
+                            props.selectedMarketDetails.decimals,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen
                           );
                         }}
                       >
@@ -1270,7 +1452,9 @@ function Dashboard() {
                         onClick={() => {
                           handleEnable(
                             props.selectedMarketDetails.underlyingAddress,
-                            props.selectedMarketDetails.pTokenAddress
+                            props.selectedMarketDetails.pTokenAddress,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen
                           );
                         }}
                       >
@@ -1296,11 +1480,24 @@ function Dashboard() {
             </div>
           )}
         </DialogContent>
+        <TxSnackbar
+          open={txSnackbarOpen}
+          message={txSnackbarMessage}
+          onClose={(event, reason) => {
+            if (reason === "clickaway") {
+              return;
+            }
+            setTxSnackbarOpen(false);
+          }}
+        />
       </Dialog>
     );
   };
 
   const EnterMarketDialog = (props) => {
+    const [txSnackbarOpen, setTxSnackbarOpen] = useState(false);
+    const [txSnackbarMessage, setTxSnackbarMessage] = useState("");
+
     return (
       <Dialog
         open={enterMarketDialogOpen}
@@ -1349,7 +1546,9 @@ function Dashboard() {
                     block
                     onClick={() => {
                       handleExitMarket(
-                        props.selectedMarketDetails.pTokenAddress
+                        props.selectedMarketDetails.pTokenAddress,
+                        setTxSnackbarMessage,
+                        setTxSnackbarOpen
                       );
                     }}
                   >
@@ -1362,7 +1561,9 @@ function Dashboard() {
                     block
                     onClick={() => {
                       handleEnterMarket(
-                        props.selectedMarketDetails.pTokenAddress
+                        props.selectedMarketDetails.pTokenAddress,
+                        setTxSnackbarMessage,
+                        setTxSnackbarOpen
                       );
                     }}
                   >
@@ -1373,7 +1574,33 @@ function Dashboard() {
             </List>
           )}
         </DialogContent>
+        <TxSnackbar
+          open={txSnackbarOpen}
+          message={txSnackbarMessage}
+          onClose={(event, reason) => {
+            if (reason === "clickaway") {
+              return;
+            }
+            setTxSnackbarOpen(false);
+          }}
+        />
       </Dialog>
+    );
+  };
+
+  const TxSnackbar = (props) => {
+    return (
+      <Snackbar
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        open={props.open}
+        autoHideDuration={5000}
+        onClose={props.onClose}
+        message={props.message}
+        action={null}
+      />
     );
   };
 
