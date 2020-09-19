@@ -1,11 +1,9 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Row, Col, Card, Table, Button } from "react-bootstrap";
 import { withStyles } from "@material-ui/core/styles";
 import Switch from "@material-ui/core/Switch";
 import Dialog from "@material-ui/core/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
@@ -14,40 +12,32 @@ import AppBar from "@material-ui/core/AppBar";
 import Box from "@material-ui/core/Box";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
-import Divider from "@material-ui/core/Divider";
 import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
 import ListSubheader from "@material-ui/core/ListSubheader";
-import OutlinedInput from "@material-ui/core/OutlinedInput";
-import InputLabel from "@material-ui/core/InputLabel";
 import InputAdornment from "@material-ui/core/InputAdornment";
-import FormHelperText from "@material-ui/core/FormHelperText";
-import FormControl from "@material-ui/core/FormControl";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
 import Snackbar from "@material-ui/core/Snackbar";
-import { AccessAlarm, ThreeDRotation } from "@material-ui/icons";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
   eX,
   convertToLargeNumberRepresentation,
   roundToDecimalPlaces,
-  emptyStringIfNullish,
   zeroStringIfNullish,
 } from "../../helpers";
 import { useWeb3React } from "@web3-react/core";
-import { store } from "../../store";
+// import { store } from "../../store";
 
-import { ethers } from "ethers";
+// import { ethers } from "ethers";
 import { MaxUint256 } from "@ethersproject/constants";
 const Compound = require("@compound-finance/compound-js/dist/nodejs/src/index.js");
 const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src/constants.js");
 const BigNumber = require("bignumber.js");
 
 function Dashboard() {
-  const { state, dispatch } = useContext(store);
+  // const { state, dispatch } = useContext(store);
   const { account, library } = useWeb3React();
   const [supplyDialogOpen, setSupplyDialogOpen] = useState(false);
   const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
@@ -219,6 +209,7 @@ function Dashboard() {
       }
       await updateGasPrice();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [library, account]);
 
   const getUnderlyingTokenAddress = async (pTokenAddress) => {

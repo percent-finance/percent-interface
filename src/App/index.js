@@ -1,10 +1,4 @@
-import React, {
-  Component,
-  Suspense,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { Suspense } from "react";
 import { Switch, Route } from "react-router-dom";
 import Loadable from "react-loadable";
 
@@ -16,7 +10,6 @@ import ScrollToTop from "./layout/ScrollToTop";
 import routes from "../route";
 import { Web3ReactProvider } from "@web3-react/core";
 import { Web3Provider } from "@ethersproject/providers";
-import { store } from "../store";
 
 function App() {
   function getLibrary(provider) {

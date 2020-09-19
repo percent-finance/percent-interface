@@ -1,10 +1,10 @@
-import React, { Component, useContext, useEffect, useState } from "react";
+import React from "react";
 import { Route, Link } from "react-router-dom";
 
 import routes from "../../../routes";
 import Aux from "../../../hoc/_Aux";
 import { Row, Col, Navbar, Nav, Button, Dropdown } from "react-bootstrap";
-import { store } from "../../../store";
+// import { store } from "../../../store";
 
 import "./app.scss";
 
@@ -13,14 +13,14 @@ import { useEagerConnect, useInactiveListener } from "../../../hooks";
 import { useWeb3React } from "@web3-react/core";
 
 function AdminLayout() {
-  const { state, dispatch } = useContext(store);
+  // const { state, dispatch } = useContext(store);
 
   const triedEager = useEagerConnect();
 
   useInactiveListener(!triedEager);
 
   function ConnectButton() {
-    const { chainId, account, activate, deactivate, active } = useWeb3React();
+    const { account, activate, deactivate, active } = useWeb3React();
 
     const onConnectClick = () => {
       activate(injected);
