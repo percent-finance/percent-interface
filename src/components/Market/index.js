@@ -928,7 +928,7 @@ function Dashboard() {
             src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
             alt="activity-user"
           />
-          <ListItemText secondary={`Supply APY`} />
+          <ListItemText secondary={`Borrow APY`} />
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${props.selectedMarketDetails.borrowApy?.toFixed(
