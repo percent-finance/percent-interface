@@ -44,6 +44,8 @@ function Dashboard() {
   const [supplyDialogOpen, setSupplyDialogOpen] = useState(false);
   const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
   const [enterMarketDialogOpen, setEnterMarketDialogOpen] = useState(false);
+  const [otherSnackbarOpen, setOtherSnackbarOpen] = useState(false);
+  const [otherSnackbarMessage, setOtherSnackbarMessage] = useState(false);
   const [selectedMarketDetails, setSelectedMarketDetails] = useState({});
   const [allMarketDetails, setAllMarketDetails] = useState([]);
   const [generalDetails, setGeneralDetails] = useState([]);
@@ -83,8 +85,10 @@ function Dashboard() {
 
       const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
 
-      if (chainIdToName[parseInt(library?.provider?.chainId)] !== "kovan") {
+      if (!chainIdToName[parseInt(library?.provider?.chainId)]) {
         setWarningDialogOpen(true);
+        setOtherSnackbarMessage("Please connect to wallet");
+        setOtherSnackbarOpen(true);
       }
 
       const allMarkets = await Compound.eth.read(
@@ -782,11 +786,10 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             <i
-              className={`fa fa-circle${
-                roundToDecimalPlaces(props.details.walletBalance, 4) <= 0
-                  ? "-o"
-                  : ""
-              } text-c-green f-10 m-r-15`}
+              className={`fa fa-circle${roundToDecimalPlaces(props.details.walletBalance, 4) <= 0
+                ? "-o"
+                : ""
+                } text-c-green f-10 m-r-15`}
             />
             {roundToDecimalPlaces(props.details.walletBalance, 4)}
           </h6>
@@ -973,10 +976,9 @@ function Dashboard() {
         onClose={() => setWarningDialogOpen(false)}
       >
         <DialogTitle style={{ padding: "50px 100px 10px 100px" }}>
-          Wrong Network Detected
+          Please connect to wallet
         </DialogTitle>
         <DialogContent style={{ padding: "10px 100px 50px 100px" }}>
-          Please switch to Kovan testnet
         </DialogContent>
       </Dialog>
     );
@@ -1098,44 +1100,44 @@ function Dashboard() {
                     {props.selectedMarketDetails.underlyingAllowance?.isGreaterThan(
                       0
                     ) &&
-                    props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
-                      +supplyAmount
-                    ) ? (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        disabled={!supplyAmount || supplyValidationMessage}
-                        block
-                        onClick={() => {
-                          handleSupply(
-                            props.selectedMarketDetails.underlyingAddress,
-                            props.selectedMarketDetails.pTokenAddress,
-                            supplyAmount,
-                            props.selectedMarketDetails.decimals,
-                            setTxSnackbarMessage,
-                            setTxSnackbarOpen
-                          );
-                        }}
-                      >
-                        Supply
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        block
-                        onClick={() => {
-                          handleEnable(
-                            props.selectedMarketDetails.underlyingAddress,
-                            props.selectedMarketDetails.pTokenAddress,
-                            setTxSnackbarMessage,
-                            setTxSnackbarOpen
-                          );
-                        }}
-                      >
-                        Enable
-                      </Button>
-                    )}
+                      props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
+                        +supplyAmount
+                      ) ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          disabled={!supplyAmount || supplyValidationMessage}
+                          block
+                          onClick={() => {
+                            handleSupply(
+                              props.selectedMarketDetails.underlyingAddress,
+                              props.selectedMarketDetails.pTokenAddress,
+                              supplyAmount,
+                              props.selectedMarketDetails.decimals,
+                              setTxSnackbarMessage,
+                              setTxSnackbarOpen
+                            );
+                          }}
+                        >
+                          Supply
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          block
+                          onClick={() => {
+                            handleEnable(
+                              props.selectedMarketDetails.underlyingAddress,
+                              props.selectedMarketDetails.pTokenAddress,
+                              setTxSnackbarMessage,
+                              setTxSnackbarOpen
+                            );
+                          }}
+                        >
+                          Enable
+                        </Button>
+                      )}
                   </ListItem>
                 </List>
                 <List>
@@ -1146,9 +1148,8 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.walletBalance,
                       4
-                    )} ${
-                      props.selectedMarketDetails.symbol
-                    }`}</ListItemSecondaryAction>
+                    )} ${props.selectedMarketDetails.symbol
+                      }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1160,23 +1161,23 @@ function Dashboard() {
                   label={props.selectedMarketDetails.symbol}
                   value={withdrawAmount}
                   onChange={handleWithdrawAmountChange}
-                  // InputProps={{
-                  //   endAdornment: (
-                  //     <InputAdornment
-                  //       position="end"
-                  //       onClick={() => {
-                  //         setWithdrawAmount(
-                  //           getMaxAmount(
-                  //             props.selectedMarketDetails.symbol,
-                  //             props.selectedMarketDetails.walletBalance
-                  //           ).toString()
-                  //         );
-                  //       }}
-                  //     >
-                  //       Max
-                  //     </InputAdornment>
-                  //   ),
-                  // }}
+                // InputProps={{
+                //   endAdornment: (
+                //     <InputAdornment
+                //       position="end"
+                //       onClick={() => {
+                //         setWithdrawAmount(
+                //           getMaxAmount(
+                //             props.selectedMarketDetails.symbol,
+                //             props.selectedMarketDetails.walletBalance
+                //           ).toString()
+                //         );
+                //       }}
+                //     >
+                //       Max
+                //     </InputAdornment>
+                //   ),
+                // }}
                 />
                 <div style={{ height: "30px", color: "red" }}>
                   {withdrawValidationMessage}
@@ -1220,9 +1221,8 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.supplyBalanceInTokenUnit,
                       4
-                    )} ${
-                      props.selectedMarketDetails.symbol
-                    }`}</ListItemSecondaryAction>
+                    )} ${props.selectedMarketDetails.symbol
+                      }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1326,23 +1326,23 @@ function Dashboard() {
                   label={props.selectedMarketDetails.symbol}
                   value={borrowAmount}
                   onChange={handleBorrowAmountChange}
-                  // InputProps={{
-                  //   endAdornment: (
-                  //     <InputAdornment
-                  //       position="end"
-                  //       onClick={() => {
-                  //         setBorrowAmount(
-                  //           getMaxAmount(
-                  //             props.selectedMarketDetails.symbol,
-                  //             props.selectedMarketDetails.walletBalance
-                  //           ).toString()
-                  //         );
-                  //       }}
-                  //     >
-                  //       Max
-                  //     </InputAdornment>
-                  //   ),
-                  // }}
+                // InputProps={{
+                //   endAdornment: (
+                //     <InputAdornment
+                //       position="end"
+                //       onClick={() => {
+                //         setBorrowAmount(
+                //           getMaxAmount(
+                //             props.selectedMarketDetails.symbol,
+                //             props.selectedMarketDetails.walletBalance
+                //           ).toString()
+                //         );
+                //       }}
+                //     >
+                //       Max
+                //     </InputAdornment>
+                //   ),
+                // }}
                 />
                 <div style={{ height: "30px", color: "red" }}>
                   {borrowValidationMessage}
@@ -1386,9 +1386,8 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.borrowBalanceInTokenUnit,
                       4
-                    )} ${
-                      props.selectedMarketDetails.symbol
-                    }`}</ListItemSecondaryAction>
+                    )} ${props.selectedMarketDetails.symbol
+                      }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1436,44 +1435,44 @@ function Dashboard() {
                     {props.selectedMarketDetails.underlyingAllowance?.isGreaterThan(
                       0
                     ) &&
-                    props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
-                      +repayAmount
-                    ) ? (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        disabled={!repayAmount || repayValidationMessage}
-                        block
-                        onClick={() => {
-                          handleRepay(
-                            props.selectedMarketDetails.underlyingAddress,
-                            props.selectedMarketDetails.pTokenAddress,
-                            repayAmount,
-                            props.selectedMarketDetails.decimals,
-                            setTxSnackbarMessage,
-                            setTxSnackbarOpen
-                          );
-                        }}
-                      >
-                        Repay
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        block
-                        onClick={() => {
-                          handleEnable(
-                            props.selectedMarketDetails.underlyingAddress,
-                            props.selectedMarketDetails.pTokenAddress,
-                            setTxSnackbarMessage,
-                            setTxSnackbarOpen
-                          );
-                        }}
-                      >
-                        Enable
-                      </Button>
-                    )}
+                      props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
+                        +repayAmount
+                      ) ? (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          disabled={!repayAmount || repayValidationMessage}
+                          block
+                          onClick={() => {
+                            handleRepay(
+                              props.selectedMarketDetails.underlyingAddress,
+                              props.selectedMarketDetails.pTokenAddress,
+                              repayAmount,
+                              props.selectedMarketDetails.decimals,
+                              setTxSnackbarMessage,
+                              setTxSnackbarOpen
+                            );
+                          }}
+                        >
+                          Repay
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          block
+                          onClick={() => {
+                            handleEnable(
+                              props.selectedMarketDetails.underlyingAddress,
+                              props.selectedMarketDetails.pTokenAddress,
+                              setTxSnackbarMessage,
+                              setTxSnackbarOpen
+                            );
+                          }}
+                        >
+                          Enable
+                        </Button>
+                      )}
                   </ListItem>
                 </List>
                 <List>
@@ -1484,9 +1483,8 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.walletBalance,
                       4
-                    )} ${
-                      props.selectedMarketDetails.symbol
-                    }`}</ListItemSecondaryAction>
+                    )} ${props.selectedMarketDetails.symbol
+                      }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1525,9 +1523,8 @@ function Dashboard() {
               alt="activity-user"
             />
           )}
-          {`${
-            props.selectedMarketDetails.isEnterMarket ? "Disable" : "Enable"
-          } as Collateral`}
+          {`${props.selectedMarketDetails.isEnterMarket ? "Disable" : "Enable"
+            } as Collateral`}
         </DialogTitle>
         <DialogContent>
           {props.selectedMarketDetails.symbol && (
@@ -1541,12 +1538,12 @@ function Dashboard() {
                     collateral.
                   </Typography>
                 ) : (
-                  <Typography>
-                    Each asset used as collateral increases your borrowing
-                    limit. Be careful, this can subject the asset to being
-                    seized in liquidation.
-                  </Typography>
-                )}
+                    <Typography>
+                      Each asset used as collateral increases your borrowing
+                      limit. Be careful, this can subject the asset to being
+                      seized in liquidation.
+                    </Typography>
+                  )}
               </ListItem>
               <DialogBorrowLimitSection generalDetails={props.generalDetails} />
               <br />
@@ -1568,21 +1565,21 @@ function Dashboard() {
                     {`Disable ${props.selectedMarketDetails.symbol} as Collateral`}
                   </Button>
                 ) : (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    block
-                    onClick={() => {
-                      handleEnterMarket(
-                        props.selectedMarketDetails.pTokenAddress,
-                        setTxSnackbarMessage,
-                        setTxSnackbarOpen
-                      );
-                    }}
-                  >
-                    {`Use ${props.selectedMarketDetails.symbol} as Collateral`}
-                  </Button>
-                )}
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      block
+                      onClick={() => {
+                        handleEnterMarket(
+                          props.selectedMarketDetails.pTokenAddress,
+                          setTxSnackbarMessage,
+                          setTxSnackbarOpen
+                        );
+                      }}
+                    >
+                      {`Use ${props.selectedMarketDetails.symbol} as Collateral`}
+                    </Button>
+                  )}
               </ListItem>
             </List>
           )}
@@ -1617,9 +1614,25 @@ function Dashboard() {
     );
   };
 
+  const OtherSnackbar = (props) => {
+    return (
+      <Snackbar
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        open={props.open}
+        autoHideDuration={5000}
+        onClose={props.onClose}
+        message={props.message}
+        action={null}
+      />
+    );
+  };
+
   return (
     <Aux>
-      <WarningDialog />
+      {/* <WarningDialog /> */}
       <SupplyDialog
         open={supplyDialogOpen}
         selectedMarketDetails={selectedMarketDetails}
@@ -1637,8 +1650,18 @@ function Dashboard() {
       />
       <LinearProgress
         style={{
-          visibility: generalDetails.netApy ? "hidden" : "visible",
+          visibility: generalDetails.netApy || !chainIdToName[parseInt(library?.provider?.chainId)] ? "hidden" : "visible",
           margin: "0px 0px 8px 0px",
+        }}
+      />
+      <OtherSnackbar
+        open={otherSnackbarOpen}
+        message={otherSnackbarMessage}
+        onClose={(event, reason) => {
+          if (reason === "clickaway") {
+            return;
+          }
+          setOtherSnackbarOpen(false);
         }}
       />
       <Row>
@@ -1676,14 +1699,13 @@ function Dashboard() {
                   className="progress-bar progress-c-theme"
                   role="progressbar"
                   style={{
-                    width: `${
-                      generalDetails.yearBorrowInterest
-                        ?.div(generalDetails.yearSupplyInterest)
-                        .times(-1)
-                        .plus(1)
-                        .times(100)
-                        .toString() || 0
-                    }%`,
+                    width: `${generalDetails.yearBorrowInterest
+                      ?.div(generalDetails.yearSupplyInterest)
+                      .times(-1)
+                      .plus(1)
+                      .times(100)
+                      .toString() || 0
+                      }%`,
                   }}
                   aria-valuenow="50"
                   aria-valuemin="0"

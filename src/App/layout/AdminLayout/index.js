@@ -40,10 +40,10 @@ function AdminLayout() {
             </Dropdown.Menu>
           </Dropdown>
         ) : (
-          <Button onClick={onConnectClick} variant="outline-secondary">
-            Connect
-          </Button>
-        )}
+            <Button onClick={onConnectClick} variant="outline-secondary">
+              Connect
+            </Button>
+          )}
       </div>
     );
   }
@@ -90,7 +90,7 @@ function AdminLayout() {
                   height="30"
                   className="d-inline-block align-top"
                 />
-                Percent
+                Percent<span style={{ fontSize: "70%", margin: "0px 0px 0px 10px" }}>Beta</span>
               </Navbar.Brand>
             </Link>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
