@@ -40,7 +40,7 @@ const BigNumber = require("bignumber.js");
 function Dashboard() {
   // const { state, dispatch } = useContext(store);
   const { account, library } = useWeb3React();
-  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  // const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [supplyDialogOpen, setSupplyDialogOpen] = useState(false);
   const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
   const [enterMarketDialogOpen, setEnterMarketDialogOpen] = useState(false);
@@ -86,7 +86,7 @@ function Dashboard() {
       const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
 
       if (!chainIdToName[parseInt(library?.provider?.chainId)]) {
-        setWarningDialogOpen(true);
+        // setWarningDialogOpen(true);
         setOtherSnackbarMessage("Please connect to wallet");
         setOtherSnackbarOpen(true);
       }
@@ -969,20 +969,20 @@ function Dashboard() {
     );
   };
 
-  const WarningDialog = (props) => {
-    return (
-      <Dialog
-        open={warningDialogOpen}
-        onClose={() => setWarningDialogOpen(false)}
-      >
-        <DialogTitle style={{ padding: "50px 100px 10px 100px" }}>
-          Please connect to wallet
-        </DialogTitle>
-        <DialogContent style={{ padding: "10px 100px 50px 100px" }}>
-        </DialogContent>
-      </Dialog>
-    );
-  };
+  // const WarningDialog = (props) => {
+  //   return (
+  //     <Dialog
+  //       open={warningDialogOpen}
+  //       onClose={() => setWarningDialogOpen(false)}
+  //     >
+  //       <DialogTitle style={{ padding: "50px 100px 10px 100px" }}>
+  //         Please connect to wallet
+  //       </DialogTitle>
+  //       <DialogContent style={{ padding: "10px 100px 50px 100px" }}>
+  //       </DialogContent>
+  //     </Dialog>
+  //   );
+  // };
 
   const SupplyDialog = (props) => {
     const [tabValue, setTabValue] = useState(0);
