@@ -1405,10 +1405,10 @@ function Dashboard() {
                         position="end"
                         onClick={() => {
                           setRepayAmount(
-                            getMaxAmount(
+                            BigNumber.minimum(getMaxAmount(
                               props.selectedMarketDetails.symbol,
                               props.selectedMarketDetails.walletBalance
-                            ).toString()
+                            ), props.selectedMarketDetails.borrowBalanceInTokenUnit).toString()
                           );
                           setRepayValidationMessage("");
                         }}
