@@ -20,7 +20,7 @@ import {
   eX,
 } from "../../../helpers";
 const Compound = require("@compound-finance/compound-js/dist/nodejs/src/index.js");
-const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src/constants.js");
+// const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src/constants.js");
 
 function AdminLayout() {
   const { state: globalState } = useContext(store);

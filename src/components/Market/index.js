@@ -48,7 +48,7 @@ function Dashboard() {
   const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
   const [enterMarketDialogOpen, setEnterMarketDialogOpen] = useState(false);
   const [otherSnackbarOpen, setOtherSnackbarOpen] = useState(false);
-  const [otherSnackbarMessage, setOtherSnackbarMessage] = useState("");
+  const [otherSnackbarMessage /*, setOtherSnackbarMessage*/] = useState("");
   const [selectedMarketDetails, setSelectedMarketDetails] = useState({});
   const [allMarketDetails, setAllMarketDetails] = useState([]);
   const [generalDetails, setGeneralDetails] = useState([]);
@@ -629,7 +629,6 @@ function Dashboard() {
         {
           network: chainIdToName[parseInt(library.provider.chainId)],
           provider: library.provider,
-          gasLimit: gasLimitEnable,
           gasLimit: symbol === "DAI" ? gasLimitDaiEnable : gasLimitEnable,
           gasPrice: globalState.gasPrice.toString(),
           abi: compoundConstants.abi.cErc20,
@@ -903,7 +902,7 @@ function Dashboard() {
             className="rounded-circle"
             style={{ width: "40px" }}
             src={require(`../../assets/images/${props.details.symbol}-logo.png`)}
-            alt="activity-user"
+            alt=""
           />
         </td>
         <td>
@@ -959,7 +958,7 @@ function Dashboard() {
             className="rounded-circle"
             style={{ width: "40px" }}
             src={require(`../../assets/images/${props.details.symbol}-logo.png`)}
-            alt="activity-user"
+            alt=""
           />
         </td>
         <td>
@@ -1020,7 +1019,7 @@ function Dashboard() {
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
             src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
-            alt="activity-user"
+            alt=""
           />
           <ListItemText secondary={`Supply APY`} />
           <ListItemSecondaryAction
@@ -1034,7 +1033,7 @@ function Dashboard() {
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
             src={require(`../../assets/images/PCT-logo.png`)}
-            alt="activity-user"
+            alt=""
           />
           <ListItemText secondary={`PCT APY`} />
           <ListItemSecondaryAction
@@ -1118,7 +1117,7 @@ function Dashboard() {
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
             src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
-            alt="activity-user"
+            alt=""
           />
           <ListItemText secondary={`Borrow APY`} />
           <ListItemSecondaryAction
@@ -1132,7 +1131,7 @@ function Dashboard() {
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
             src={require(`../../assets/images/PCT-logo.png`)}
-            alt="activity-user"
+            alt=""
           />
           <ListItemText secondary={`PCT APY`} />
           <ListItemSecondaryAction
@@ -1323,7 +1322,7 @@ function Dashboard() {
               className="rounded-circle"
               style={{ width: "30px", margin: "0px 10px 0px 0px" }}
               src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
-              alt="activity-user"
+              alt=""
             />
           )}
           {`${props.selectedMarketDetails.symbol}`}
@@ -1595,7 +1594,7 @@ function Dashboard() {
               className="rounded-circle"
               style={{ width: "30px", margin: "0px 10px 0px 0px" }}
               src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
-              alt="activity-user"
+              alt=""
             />
           )}
           {`${props.selectedMarketDetails.symbol}`}
@@ -1834,7 +1833,7 @@ function Dashboard() {
               className="rounded-circle"
               style={{ width: "30px", margin: "0px 10px 0px 0px" }}
               src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
-              alt="activity-user"
+              alt=""
             />
           )}
           {`${
@@ -1943,6 +1942,16 @@ function Dashboard() {
         action={null}
       />
     );
+  };
+
+  const compareSymbol = (a, b) => {
+    if (a.symbol < b.symbol) {
+      return -1;
+    }
+    if (a.symbol > b.symbol) {
+      return 1;
+    }
+    return 0;
   };
 
   return (
@@ -2198,6 +2207,7 @@ function Dashboard() {
                   )}
                   {allMarketDetails
                     .filter((item) => item.supplyBalance?.toNumber() > 0)
+                    .sort(compareSymbol)
                     .map((details, index) => (
                       <SupplyMarketRow key={index} details={details} />
                     ))}
@@ -2221,6 +2231,7 @@ function Dashboard() {
                   )}
                   {allMarketDetails
                     .filter((item) => item.supplyBalance?.toNumber() <= 0)
+                    .sort(compareSymbol)
                     .map((details, index) => (
                       <SupplyMarketRow key={index} details={details} />
                     ))}
@@ -2265,6 +2276,7 @@ function Dashboard() {
                   )}
                   {allMarketDetails
                     .filter((item) => item.borrowBalance?.toNumber() > 0)
+                    .sort(compareSymbol)
                     .map((details, index) => (
                       <BorrowMarketRow key={index} details={details} />
                     ))}
@@ -2288,6 +2300,7 @@ function Dashboard() {
                   )}
                   {allMarketDetails
                     .filter((item) => item.borrowBalance?.toNumber() <= 0)
+                    .sort(compareSymbol)
                     .map((details, index) => (
                       <BorrowMarketRow key={index} details={details} />
                     ))}
