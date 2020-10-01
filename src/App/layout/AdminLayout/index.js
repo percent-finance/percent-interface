@@ -219,7 +219,7 @@ function AdminLayout() {
                   height="30"
                   className="d-inline-block align-top"
                 />
-                Percent<span style={{ fontSize: "70%", margin: "0px 0px 0px 10px" }}>Beta</span>
+                Percent
               </Navbar.Brand>
             </Link>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
