@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Row, Col, Card, Table, Button } from "react-bootstrap";
 import { withStyles } from "@material-ui/core/styles";
 import Switch from "@material-ui/core/Switch";
@@ -20,6 +20,8 @@ import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
 import Snackbar from "@material-ui/core/Snackbar";
 import LinearProgress from "@material-ui/core/LinearProgress";
+import ArrowRightIcon from "@material-ui/icons/ArrowRight";
+import * as colors from "@material-ui/core/colors";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
@@ -28,6 +30,7 @@ import {
   roundToDecimalPlaces,
   zeroStringIfNullish,
 } from "../../helpers";
+import { store } from "../../store";
 import { useWeb3React } from "@web3-react/core";
 // import { store } from "../../store";
 
@@ -38,189 +41,246 @@ const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src
 const BigNumber = require("bignumber.js");
 
 function Dashboard() {
-  // const { state, dispatch } = useContext(store);
+  const { state: globalState, dispatch } = useContext(store);
   const { account, library } = useWeb3React();
   // const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [supplyDialogOpen, setSupplyDialogOpen] = useState(false);
   const [borrowDialogOpen, setBorrowDialogOpen] = useState(false);
   const [enterMarketDialogOpen, setEnterMarketDialogOpen] = useState(false);
   const [otherSnackbarOpen, setOtherSnackbarOpen] = useState(false);
-  const [otherSnackbarMessage, setOtherSnackbarMessage] = useState(false);
+  const [otherSnackbarMessage, setOtherSnackbarMessage] = useState("");
   const [selectedMarketDetails, setSelectedMarketDetails] = useState({});
   const [allMarketDetails, setAllMarketDetails] = useState([]);
   const [generalDetails, setGeneralDetails] = useState([]);
-  const [gasPrice, setGasPrice] = useState(eX(50, 9));
   const gasLimit = "250000";
-  const gasLimitBorrow = "702020";
+  const gasLimitDaiSupply = "535024";
+  const gasLimitDaiWithdraw = "330000";
   const gasLimitEnable = "62020";
+  const gasLimitDaiEnable = "66537";
+  const gasLimitBorrow = "702020";
+  const gasLimitDaiBorrow = "729897";
+  const gasLimitDaiRepay = "535024";
+
   const gasLimitEnterMarket = "112020";
 
   useEffect(() => {
-    (async () => {
-      // console.log(
-      //   "ethers provider",
-      //   new ethers.providers.Web3Provider(window.ethereum)
-      // );
-      // const providerNetwork = (await provider.getNetwork()).name;
-      // const signer = provider.getSigner();
-      // const signerAddress = await signer.getAddress();
-      // dispatch({
-      //   type: "UPDATE_PROVIDER",
-      //   provider,
-      //   providerNetwork,
-      //   signerAddress,
-      // });
-      // console.log("providerNetwork", providerNetwork);
-      // console.log("signerAddress", signerAddress);
-      // console.log("provider.getBlockNumber()", provider.getBlockNumber());
-      // console.log(
-      //   "library is ethers' provider",
-      //   await library?.getSigner().getAddress()
-      // );
+    // (async () => {
+    //   await updateData();
+    // const allDialogsClosed = !supplyDialogOpen && !borrowDialogOpen && !enterMarketDialogOpen;
+    // const getAllDialogsClosed = () => allDialogsClosed;
+    // let interval;
 
-      // const comptrollerAddress = Compound.util.getAddress(
-      //   Compound.Comptroller,
-      //   chainIdToName[parseInt(library?.provider?.chainId)]
-      // );
+    // if (allDialogsClosed) {
+    //   console.log("allDialogsClosed is true now")
+    //   await updateData();
 
-      const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
+    //   interval = setInterval(async () => {
+    //     console.log("allDialogsClosed", allDialogsClosed);
+    //     if (allDialogsClosed) {
+    //       await updateData()
+    //     }
+    //   }, 10000);
+    // } else {
+    //   console.log("clearInterval")
+    //   clearInterval(interval);
+    // }
 
-      if (!chainIdToName[parseInt(library?.provider?.chainId)]) {
-        // setWarningDialogOpen(true);
-        setOtherSnackbarMessage("Please connect to wallet");
-        setOtherSnackbarOpen(true);
-      }
+    // return () => clearInterval(interval);
+    // })();
+    // const allDialogsClosed = !supplyDialogOpen && !borrowDialogOpen && !enterMarketDialogOpen;
+    // if (allDialogsClosed) {
+    updateData();
+    // }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    library,
+    account /*, supplyDialogOpen, borrowDialogOpen, enterMarketDialogOpen*/,
+  ]);
 
-      const allMarkets = await Compound.eth.read(
+  const updateData = async () => {
+    // console.log(
+    //   "ethers provider",
+    //   new ethers.providers.Web3Provider(window.ethereum)
+    // );
+    // const providerNetwork = (await provider.getNetwork()).name;
+    // const signer = provider.getSigner();
+    // const signerAddress = await signer.getAddress();
+    // dispatch({
+    //   type: "UPDATE_PROVIDER",
+    //   provider,
+    //   providerNetwork,
+    //   signerAddress,
+    // });
+    // console.log("providerNetwork", providerNetwork);
+    // console.log("signerAddress", signerAddress);
+    // console.log("provider.getBlockNumber()", provider.getBlockNumber());
+    // console.log(
+    //   "library is ethers' provider",
+    //   await library?.getSigner().getAddress()
+    // );
+
+    // const comptrollerAddress = Compound.util.getAddress(
+    //   Compound.Comptroller,
+    //   chainIdToName[parseInt(library?.provider?.chainId)]
+    // );
+
+    console.log("updateData start");
+
+    const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
+
+    // if (!chainIdToName[parseInt(library?.provider?.chainId)]) {
+    //   // setWarningDialogOpen(true);
+    //   setOtherSnackbarMessage("Please connect to wallet");
+    //   setOtherSnackbarOpen(true);
+    // }
+
+    const allMarkets = await Compound.eth.read(
+      comptrollerAddress,
+      "function getAllMarkets() returns (address[])",
+      [], // [optional] parameters
+      {
+        network: chainIdToName[parseInt(library?.provider?.chainId)],
+        _compoundProvider: library,
+      } // [optional] call options, provider, network, ethers.js "overrides"
+    );
+
+    if (account) {
+      const enteredMarkets = await Compound.eth.read(
         comptrollerAddress,
-        "function getAllMarkets() returns (address[])",
-        [], // [optional] parameters
+        "function getAssetsIn(address) returns (address[])",
+        [account], // [optional] parameters
         {
           network: chainIdToName[parseInt(library?.provider?.chainId)],
           _compoundProvider: library,
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
 
-      if (account) {
-        const enteredMarkets = await Compound.eth.read(
-          comptrollerAddress,
-          "function getAssetsIn(address) returns (address[])",
-          [account], // [optional] parameters
-          {
-            network: chainIdToName[parseInt(library?.provider?.chainId)],
-            _compoundProvider: library,
-          } // [optional] call options, provider, network, ethers.js "overrides"
-        );
+      let totalSupplyBalance = new BigNumber(0);
+      let totalBorrowBalance = new BigNumber(0);
+      let totalBorrowLimit = new BigNumber(0);
+      let yearSupplyInterest = new BigNumber(0);
+      let yearBorrowInterest = new BigNumber(0);
 
-        let totalSupplyBalance = new BigNumber(0);
-        let totalBorrowBalance = new BigNumber(0);
-        let totalBorrowLimit = new BigNumber(0);
-        let yearSupplyInterest = new BigNumber(0);
-        let yearBorrowInterest = new BigNumber(0);
+      const details = await Promise.all(
+        allMarkets.map(async (pTokenAddress) => {
+          const underlyingAddress = await getUnderlyingTokenAddress(
+            pTokenAddress
+          );
+          const decimals = await getDecimals(underlyingAddress);
+          const underlyingPrice = await getUnderlyingPrice(
+            pTokenAddress,
+            decimals
+          );
+          const supplyAndBorrowBalance = await getSupplyAndBorrowBalance(
+            pTokenAddress,
+            decimals,
+            underlyingPrice,
+            account
+          );
+          totalSupplyBalance = totalSupplyBalance.plus(
+            supplyAndBorrowBalance?.supplyBalance
+          );
+          totalBorrowBalance = totalBorrowBalance.plus(
+            supplyAndBorrowBalance?.borrowBalance
+          );
 
-        const details = await Promise.all(
-          allMarkets.map(async (pTokenAddress) => {
-            const underlyingAddress = await getUnderlyingTokenAddress(
-              pTokenAddress
-            );
-            const decimals = await getDecimals(underlyingAddress);
-            const underlyingPrice = await getUnderlyingPrice(
-              pTokenAddress,
-              decimals
-            );
-            const supplyAndBorrowBalance = await getSupplyAndBorrowBalance(
-              pTokenAddress,
-              decimals,
-              underlyingPrice,
-              account
-            );
-            totalSupplyBalance = totalSupplyBalance.plus(
-              supplyAndBorrowBalance?.supplyBalance
-            );
-            totalBorrowBalance = totalBorrowBalance.plus(
-              supplyAndBorrowBalance?.borrowBalance
-            );
+          const isEnterMarket = enteredMarkets.includes(pTokenAddress);
 
-            const isEnterMarket = enteredMarkets.includes(pTokenAddress);
+          const collateralFactor = await getCollateralFactor(
+            comptrollerAddress,
+            pTokenAddress
+          );
+          totalBorrowLimit = totalBorrowLimit.plus(
+            isEnterMarket
+              ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
+              : 0
+          );
 
-            const collateralFactor = await getCollateralFactor(
-              comptrollerAddress,
-              pTokenAddress
-            );
-            totalBorrowLimit = totalBorrowLimit.plus(
-              isEnterMarket
-                ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
-                : 0
-            );
+          const supplyApy = await getSupplyApy(pTokenAddress);
+          const borrowApy = await getBorrowApy(pTokenAddress);
+          yearSupplyInterest = yearSupplyInterest.plus(
+            supplyAndBorrowBalance?.supplyBalance.times(supplyApy).div(100)
+          );
+          yearBorrowInterest = yearBorrowInterest.plus(
+            supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
+          );
 
-            const supplyApy = await getSupplyApy(pTokenAddress);
-            const borrowApy = await getBorrowApy(pTokenAddress);
-            yearSupplyInterest = yearSupplyInterest.plus(
-              supplyAndBorrowBalance?.supplyBalance.times(supplyApy).div(100)
-            );
-            yearBorrowInterest = yearBorrowInterest.plus(
-              supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
-            );
+          const underlyingAmount = await getUnderlyingAmount(
+            pTokenAddress,
+            decimals
+          );
 
-            const underlyingAmount = await getUnderlyingAmount(
-              pTokenAddress,
-              decimals
-            );
-
-            return {
-              pTokenAddress,
+          return {
+            pTokenAddress,
+            underlyingAddress,
+            symbol: await getTokenSymbol(underlyingAddress),
+            supplyApy,
+            borrowApy,
+            underlyingAllowance: await getAllowance(
               underlyingAddress,
-              symbol: await getTokenSymbol(underlyingAddress),
-              supplyApy,
-              borrowApy,
-              underlyingAllowance: await getAllowance(
-                underlyingAddress,
-                decimals,
-                account,
-                pTokenAddress
-              ),
-              walletBalance: await getBalanceOf(
-                underlyingAddress,
-                decimals,
-                account
-              ),
-              supplyBalanceInTokenUnit:
-                supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
-              supplyBalance: supplyAndBorrowBalance?.supplyBalance,
-              borrowBalanceInTokenUnit:
-                supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
-              borrowBalance: supplyAndBorrowBalance?.borrowBalance,
-              isEnterMarket,
-              underlyingAmount,
-              underlyingPrice,
-              liquidity: +underlyingAmount * +underlyingPrice,
               decimals,
-            };
-          })
-        );
+              account,
+              pTokenAddress
+            ),
+            walletBalance: await getBalanceOf(
+              underlyingAddress,
+              decimals,
+              account
+            ),
+            supplyBalanceInTokenUnit:
+              supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
+            supplyBalance: supplyAndBorrowBalance?.supplyBalance,
+            marketTotalSupply: (
+              await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
+            )?.times(underlyingPrice),
+            borrowBalanceInTokenUnit:
+              supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
+            borrowBalance: supplyAndBorrowBalance?.borrowBalance,
+            marketTotalBorrow: (
+              await getMarketTotalBorrowInTokenUnit(pTokenAddress, decimals)
+            )?.times(underlyingPrice),
+            isEnterMarket,
+            underlyingAmount,
+            underlyingPrice,
+            liquidity: +underlyingAmount * +underlyingPrice,
+            collateralFactor,
+            pctSpeed: await getPctSpeed(pTokenAddress),
+            decimals,
+          };
+        })
+      );
 
-        setGeneralDetails({
-          comptrollerAddress,
-          totalSupplyBalance,
-          totalBorrowBalance,
-          totalBorrowLimit,
-          totalBorrowLimitUsedPercent: totalBorrowBalance
-            .div(totalBorrowLimit)
-            .times(100),
-          yearSupplyInterest,
-          yearBorrowInterest,
-          netApy: yearSupplyInterest
-            .minus(yearBorrowInterest)
-            .div(totalSupplyBalance)
-            .times(100),
-        });
+      setGeneralDetails({
+        comptrollerAddress,
+        totalSupplyBalance,
+        totalBorrowBalance,
+        totalBorrowLimit,
+        totalBorrowLimitUsedPercent: totalBorrowBalance
+          .div(totalBorrowLimit)
+          .times(100),
+        yearSupplyInterest,
+        yearBorrowInterest,
+        netApy: yearSupplyInterest
+          .minus(yearBorrowInterest)
+          .div(totalSupplyBalance)
+          .times(100),
+        pctPrice: await getPctPrice(),
+      });
 
-        setAllMarketDetails(details);
-      }
-      await updateGasPrice();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [library, account]);
+      setAllMarketDetails(details);
+    }
+    await updateGasPrice();
+  };
+
+  const getPctPrice = async () => {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=percent&vs_currencies=usd"
+      // "https://api.coingecko.com/api/v3/simple/price?ids=compound-governance-token&vs_currencies=usd"
+    );
+    const data = await response.json();
+    return new BigNumber(data?.percent?.usd);
+    // return new BigNumber(data["compound-governance-token"]?.usd);
+  };
 
   const getUnderlyingTokenAddress = async (pTokenAddress) => {
     try {
@@ -493,11 +553,73 @@ function Dashboard() {
     }
   };
 
+  const getMarketTotalSupplyInTokenUnit = async (tokenAddress, decimals) => {
+    if (library) {
+      const cTokenTotalSupply = await Compound.eth.read(
+        tokenAddress,
+        "function totalSupply() returns (uint)",
+        [], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          _compoundProvider: library,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+
+      const exchangeRateStored = await Compound.eth.read(
+        tokenAddress,
+        "function exchangeRateStored() returns (uint)",
+        [], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          _compoundProvider: library,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+
+      return eX(
+        cTokenTotalSupply.mul(exchangeRateStored).toString(),
+        -1 * decimals - 18
+      );
+    }
+  };
+
+  const getMarketTotalBorrowInTokenUnit = async (tokenAddress, decimals) => {
+    if (library) {
+      const totalBorrows = await Compound.eth.read(
+        tokenAddress,
+        "function totalBorrows() returns (uint)",
+        [], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          _compoundProvider: library,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+
+      return eX(totalBorrows.toString(), -1 * decimals);
+    }
+  };
+
+  const getPctSpeed = async (tokenAddress) => {
+    if (library) {
+      const pctSpeed = await Compound.eth.read(
+        process.env.REACT_APP_COMPTROLLER_ADDRESS,
+        "function compSpeeds(address) returns (uint)",
+        [tokenAddress], // [optional] parameters
+        {
+          network: chainIdToName[parseInt(library.provider.chainId)],
+          _compoundProvider: library,
+        } // [optional] call options, provider, network, ethers.js "overrides"
+      );
+
+      return eX(pctSpeed.toString(), -18);
+    }
+  };
+
   const handleEnable = async (
     underlyingAddress,
     pTokenAddress,
     setTxSnackbarMessage,
-    setTxSnackbarOpen
+    setTxSnackbarOpen,
+    symbol
   ) => {
     try {
       const tx = await Compound.eth.trx(
@@ -507,8 +629,9 @@ function Dashboard() {
         {
           network: chainIdToName[parseInt(library.provider.chainId)],
           provider: library.provider,
-          gasLimitEnable,
-          gasPrice: gasPrice.toString(),
+          gasLimit: gasLimitEnable,
+          gasLimit: symbol === "DAI" ? gasLimitDaiEnable : gasLimitEnable,
+          gasPrice: globalState.gasPrice.toString(),
           abi: compoundConstants.abi.cErc20,
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
@@ -527,14 +650,15 @@ function Dashboard() {
     amount,
     decimals,
     setTxSnackbarMessage,
-    setTxSnackbarOpen
+    setTxSnackbarOpen,
+    symbol
   ) => {
     let parameters = [];
     let options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit,
-      gasPrice: gasPrice.toString(),
+      gasLimit: symbol === "DAI" ? gasLimitDaiSupply : gasLimit,
+      gasPrice: globalState.gasPrice.toString(),
     };
 
     if (underlyingAddress === ethDummyAddress) {
@@ -567,13 +691,14 @@ function Dashboard() {
     amount,
     decimals,
     setTxSnackbarMessage,
-    setTxSnackbarOpen
+    setTxSnackbarOpen,
+    symbol
   ) => {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit,
-      gasPrice: gasPrice.toString(),
+      gasLimit: symbol === "DAI" ? gasLimitDaiWithdraw : gasLimit,
+      gasPrice: globalState.gasPrice.toString(),
     };
 
     if (underlyingAddress === ethDummyAddress) {
@@ -604,13 +729,14 @@ function Dashboard() {
     amount,
     decimals,
     setTxSnackbarMessage,
-    setTxSnackbarOpen
+    setTxSnackbarOpen,
+    symbol
   ) => {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: gasLimitBorrow,
-      gasPrice: gasPrice.toString(),
+      gasLimit: symbol === "DAI" ? gasLimitDaiBorrow : gasLimitBorrow,
+      gasPrice: globalState.gasPrice.toString(),
     };
 
     if (underlyingAddress === ethDummyAddress) {
@@ -641,14 +767,15 @@ function Dashboard() {
     amount,
     decimals,
     setTxSnackbarMessage,
-    setTxSnackbarOpen
+    setTxSnackbarOpen,
+    symbol
   ) => {
     let parameters = [];
     let options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit,
-      gasPrice: gasPrice.toString(),
+      gasLimit: symbol === "DAI" ? gasLimitDaiRepay : gasLimit,
+      gasPrice: globalState.gasPrice.toString(),
     };
 
     if (underlyingAddress === ethDummyAddress) {
@@ -689,7 +816,7 @@ function Dashboard() {
           network: chainIdToName[parseInt(library.provider.chainId)],
           provider: library.provider,
           gasLimitEnterMarket,
-          gasPrice: gasPrice.toString(),
+          gasPrice: globalState.gasPrice.toString(),
           abi: compoundConstants.abi.Comptroller,
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
@@ -716,7 +843,7 @@ function Dashboard() {
           network: chainIdToName[parseInt(library.provider.chainId)],
           provider: library.provider,
           gasLimitEnterMarket,
-          gasPrice: gasPrice.toString(),
+          gasPrice: globalState.gasPrice.toString(),
           abi: compoundConstants.abi.Comptroller,
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
@@ -734,12 +861,16 @@ function Dashboard() {
       "https://ethgasstation.info/api/ethgasAPI.json"
     );
     const data = await response.json();
-    setGasPrice(eX(data.fast, 8));
+    dispatch({
+      type: "UPDATE_GAS_PRICE",
+      gasPrice: eX(data.fast, 8),
+    });
+    // setGasPrice(eX?(data.fast, 8));
   };
 
   const getMaxAmount = (symbol, walletBalance) => {
     if (symbol === "ETH") {
-      return walletBalance.minus(eX(gasPrice.times(gasLimit), -18));
+      return walletBalance.minus(eX(globalState.gasPrice.times(gasLimit), -18));
     } else {
       return walletBalance;
     }
@@ -785,11 +916,17 @@ function Dashboard() {
         </td>
         <td>
           <h6 className="text-muted">
+            {roundToDecimalPlaces(props.details.supplyBalanceInTokenUnit, 4)}
+          </h6>
+        </td>
+        <td>
+          <h6 className="text-muted">
             <i
-              className={`fa fa-circle${roundToDecimalPlaces(props.details.walletBalance, 4) <= 0
-                ? "-o"
-                : ""
-                } text-c-green f-10 m-r-15`}
+              className={`fa fa-circle${
+                roundToDecimalPlaces(props.details.walletBalance, 4) <= 0
+                  ? "-o"
+                  : ""
+              } text-c-green f-10 m-r-15`}
             />
             {roundToDecimalPlaces(props.details.walletBalance, 4)}
           </h6>
@@ -831,6 +968,11 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.borrowApy?.toFixed(2)}%`}
+          </h6>
+        </td>
+        <td>
+          <h6 className="text-muted">
+            {roundToDecimalPlaces(props.details.borrowBalanceInTokenUnit, 4)}
           </h6>
         </td>
         <td>
@@ -887,6 +1029,25 @@ function Dashboard() {
             2
           )}%`}</ListItemSecondaryAction>
         </ListItem>
+        <ListItem>
+          <img
+            className="rounded-circle"
+            style={{ width: "30px", margin: "0px 10px 0px 0px" }}
+            src={require(`../../assets/images/PCT-logo.png`)}
+            alt="activity-user"
+          />
+          <ListItemText secondary={`PCT APY`} />
+          <ListItemSecondaryAction
+            style={{ margin: "0px 15px 0px 0px" }}
+          >{`${zeroStringIfNullish(
+            props.selectedMarketDetails.pctSpeed
+              ?.times(4 * 60 * 24 * 365 * 100)
+              .times(props.generalDetails.pctPrice)
+              .div(props.selectedMarketDetails.marketTotalSupply)
+              .toFixed(2),
+            2
+          )}%`}</ListItemSecondaryAction>
+        </ListItem>
       </div>
     );
   };
@@ -899,20 +1060,48 @@ function Dashboard() {
         </ListSubheader>
         <ListItem>
           <ListItemText secondary={`Borrow Limit`} />
-          <ListItemSecondaryAction
-            style={{ margin: "0px 15px 0px 0px" }}
-          >{`$${props.generalDetails.totalBorrowLimit?.toFixed(
-            2
-          )}`}</ListItemSecondaryAction>
+          <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
+            <span>
+              {`$${props.generalDetails.totalBorrowLimit?.toFixed(2)}`}
+            </span>
+            {props.newBorrowLimit ? (
+              <span>
+                <ArrowRightIcon style={{ color: colors.lightBlue[500] }} />
+                {`$${props.newBorrowLimit?.toFixed(2)}`}
+              </span>
+            ) : null}
+          </ListItemSecondaryAction>
         </ListItem>
         <ListItem>
           <ListItemText secondary={`Borrow Limit Used`} />
-          <ListItemSecondaryAction
-            style={{ margin: "0px 15px 0px 0px" }}
-          >{`${zeroStringIfNullish(
-            props.generalDetails.totalBorrowLimitUsedPercent?.toFixed(2),
-            2
-          )}%`}</ListItemSecondaryAction>
+          <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
+            <span>{`${zeroStringIfNullish(
+              props.generalDetails.totalBorrowLimitUsedPercent?.toFixed(2),
+              2
+            )}%`}</span>
+            {props.newBorrowLimit ? (
+              <span>
+                <ArrowRightIcon style={{ color: colors.lightBlue[500] }} />
+                <span
+                  style={{
+                    color: props.generalDetails.totalBorrowBalance
+                      ?.div(props.newBorrowLimit)
+                      .isGreaterThan(1)
+                      ? colors.red[500]
+                      : null,
+                  }}
+                >
+                  {`${zeroStringIfNullish(
+                    props.generalDetails.totalBorrowBalance
+                      ?.div(props.newBorrowLimit)
+                      .times(100)
+                      .toFixed(2),
+                    2
+                  )}%`}
+                </span>
+              </span>
+            ) : null}
+          </ListItemSecondaryAction>
         </ListItem>
       </div>
     );
@@ -938,11 +1127,41 @@ function Dashboard() {
             2
           )}%`}</ListItemSecondaryAction>
         </ListItem>
+        <ListItem>
+          <img
+            className="rounded-circle"
+            style={{ width: "30px", margin: "0px 10px 0px 0px" }}
+            src={require(`../../assets/images/PCT-logo.png`)}
+            alt="activity-user"
+          />
+          <ListItemText secondary={`PCT APY`} />
+          <ListItemSecondaryAction
+            style={{ margin: "0px 15px 0px 0px" }}
+          >{`${zeroStringIfNullish(
+            props.selectedMarketDetails.pctSpeed
+              ?.times(4 * 60 * 24 * 365 * 100)
+              .times(props.generalDetails.pctPrice)
+              .div(props.selectedMarketDetails.marketTotalBorrow)
+              .toFixed(2),
+            2
+          )}%`}</ListItemSecondaryAction>
+        </ListItem>
       </div>
     );
   };
 
   const DialogBorrowLimitSection2 = (props) => {
+    const getNewBorrowBalance = (
+      originBorrowBalance,
+      borrowAmount,
+      repayAmount,
+      underlyingPrice
+    ) => {
+      return originBorrowBalance?.plus(
+        new BigNumber(borrowAmount).minus(repayAmount).times(underlyingPrice)
+      );
+    };
+
     return (
       <div>
         <ListSubheader style={{ fontSize: "80%", fontWeight: "bold" }}>
@@ -950,20 +1169,66 @@ function Dashboard() {
         </ListSubheader>
         <ListItem>
           <ListItemText secondary={`Borrow Balance`} />
-          <ListItemSecondaryAction
-            style={{ margin: "0px 15px 0px 0px" }}
-          >{`$${props.generalDetails.totalBorrowBalance?.toFixed(
-            2
-          )}`}</ListItemSecondaryAction>
+          <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
+            <span>
+              {`$${props.generalDetails.totalBorrowBalance?.toFixed(2)}`}
+            </span>
+            {props.borrowAmount || props.repayAmount ? (
+              <span>
+                <ArrowRightIcon style={{ color: colors.lightBlue[500] }} />
+                {`$${zeroStringIfNullish(
+                  getNewBorrowBalance(
+                    props.generalDetails.totalBorrowBalance,
+                    props.borrowAmount,
+                    props.repayAmount,
+                    props.selectedMarketDetails.underlyingPrice
+                  )?.toFixed(2),
+                  2
+                )}`}
+              </span>
+            ) : null}
+          </ListItemSecondaryAction>
         </ListItem>
         <ListItem>
           <ListItemText secondary={`Borrow Limit Used`} />
-          <ListItemSecondaryAction
-            style={{ margin: "0px 15px 0px 0px" }}
-          >{`${zeroStringIfNullish(
-            props.generalDetails.totalBorrowLimitUsedPercent?.toFixed(2),
-            2
-          )}%`}</ListItemSecondaryAction>
+          <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
+            <span>{`${zeroStringIfNullish(
+              props.generalDetails.totalBorrowLimitUsedPercent?.toFixed(2),
+              2
+            )}%`}</span>
+            {props.borrowAmount || props.repayAmount ? (
+              <span>
+                <ArrowRightIcon style={{ color: colors.lightBlue[500] }} />
+                <span
+                  style={{
+                    color: getNewBorrowBalance(
+                      props.generalDetails.totalBorrowBalance,
+                      props.borrowAmount,
+                      props.repayAmount,
+                      props.selectedMarketDetails.underlyingPrice
+                    )
+                      ?.div(props.generalDetails.totalBorrowLimit)
+                      .isGreaterThan(1)
+                      ? colors.red[500]
+                      : null,
+                  }}
+                >
+                  {`${zeroStringIfNullish(
+                    getNewBorrowBalance(
+                      props.generalDetails.totalBorrowBalance,
+                      props.borrowAmount,
+                      props.repayAmount,
+                      props.selectedMarketDetails.underlyingPrice
+                    )
+                      ?.div(props.generalDetails.totalBorrowLimit)
+                      .times(100)
+                      .toFixed(2),
+                    2
+                  )}%`}
+                </span>
+              </span>
+            ) : null}
+          </ListItemSecondaryAction>
         </ListItem>
       </div>
     );
@@ -988,6 +1253,8 @@ function Dashboard() {
     const [tabValue, setTabValue] = useState(0);
     const [supplyAmount, setSupplyAmount] = useState("");
     const [withdrawAmount, setWithdrawAmount] = useState("");
+    const [newBorrowLimit1, setNewBorrowLimit1] = useState();
+    const [newBorrowLimit2, setNewBorrowLimit2] = useState();
     const [supplyValidationMessage, setSupplyValidationMessage] = useState("");
     const [withdrawValidationMessage, setWithdrawValidationMessage] = useState(
       ""
@@ -998,8 +1265,7 @@ function Dashboard() {
     const handleTabChange = (event, newValue) => {
       setTabValue(newValue);
     };
-    const handleSupplyAmountChange = (event) => {
-      const amount = event.target.value;
+    const handleSupplyAmountChange = (amount) => {
       setSupplyAmount(amount);
 
       if (amount <= 0) {
@@ -1009,9 +1275,18 @@ function Dashboard() {
       } else {
         setSupplyValidationMessage("");
       }
+
+      setNewBorrowLimit1(
+        props.generalDetails.totalBorrowLimit.plus(
+          props.selectedMarketDetails.isEnterMarket
+            ? new BigNumber(amount ? amount : "0")
+                .times(props.selectedMarketDetails.underlyingPrice)
+                .times(props.selectedMarketDetails.collateralFactor)
+            : new BigNumber(0)
+        )
+      );
     };
-    const handleWithdrawAmountChange = (event) => {
-      const amount = event.target.value;
+    const handleWithdrawAmountChange = (amount) => {
       setWithdrawAmount(amount);
 
       if (amount <= 0) {
@@ -1025,6 +1300,16 @@ function Dashboard() {
       } else {
         setWithdrawValidationMessage("");
       }
+
+      setNewBorrowLimit2(
+        props.generalDetails.totalBorrowLimit.minus(
+          props.selectedMarketDetails.isEnterMarket
+            ? new BigNumber(amount ? amount : "0")
+                .times(props.selectedMarketDetails.underlyingPrice)
+                .times(props.selectedMarketDetails.collateralFactor)
+            : new BigNumber(0)
+        )
+      );
     };
 
     return (
@@ -1063,19 +1348,20 @@ function Dashboard() {
                   variant="outlined"
                   label={props.selectedMarketDetails.symbol}
                   value={supplyAmount}
-                  onChange={handleSupplyAmountChange}
+                  onChange={(event) => {
+                    handleSupplyAmountChange(event.target.value);
+                  }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment
                         position="end"
                         onClick={() => {
-                          setSupplyAmount(
+                          handleSupplyAmountChange(
                             getMaxAmount(
                               props.selectedMarketDetails.symbol,
                               props.selectedMarketDetails.walletBalance
                             ).toString()
                           );
-                          setSupplyValidationMessage("");
                         }}
                       >
                         Max
@@ -1088,11 +1374,13 @@ function Dashboard() {
                 </div>
                 <List>
                   <DialogSupplyRatesSection
+                    generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
                   />
                   <br />
                   <DialogBorrowLimitSection
                     generalDetails={props.generalDetails}
+                    newBorrowLimit={newBorrowLimit1}
                   />
                   <br />
                   <br />
@@ -1100,44 +1388,46 @@ function Dashboard() {
                     {props.selectedMarketDetails.underlyingAllowance?.isGreaterThan(
                       0
                     ) &&
-                      props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
-                        +supplyAmount
-                      ) ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          disabled={!supplyAmount || supplyValidationMessage}
-                          block
-                          onClick={() => {
-                            handleSupply(
-                              props.selectedMarketDetails.underlyingAddress,
-                              props.selectedMarketDetails.pTokenAddress,
-                              supplyAmount,
-                              props.selectedMarketDetails.decimals,
-                              setTxSnackbarMessage,
-                              setTxSnackbarOpen
-                            );
-                          }}
-                        >
-                          Supply
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          block
-                          onClick={() => {
-                            handleEnable(
-                              props.selectedMarketDetails.underlyingAddress,
-                              props.selectedMarketDetails.pTokenAddress,
-                              setTxSnackbarMessage,
-                              setTxSnackbarOpen
-                            );
-                          }}
-                        >
-                          Enable
-                        </Button>
-                      )}
+                    props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
+                      +supplyAmount
+                    ) ? (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        disabled={!supplyAmount || supplyValidationMessage}
+                        block
+                        onClick={() => {
+                          handleSupply(
+                            props.selectedMarketDetails.underlyingAddress,
+                            props.selectedMarketDetails.pTokenAddress,
+                            supplyAmount,
+                            props.selectedMarketDetails.decimals,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen,
+                            props.selectedMarketDetails.symbol
+                          );
+                        }}
+                      >
+                        Supply
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        block
+                        onClick={() => {
+                          handleEnable(
+                            props.selectedMarketDetails.underlyingAddress,
+                            props.selectedMarketDetails.pTokenAddress,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen,
+                            props.selectedMarketDetails.symbol
+                          );
+                        }}
+                      >
+                        Enable
+                      </Button>
+                    )}
                   </ListItem>
                 </List>
                 <List>
@@ -1148,8 +1438,9 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.walletBalance,
                       4
-                    )} ${props.selectedMarketDetails.symbol
-                      }`}</ListItemSecondaryAction>
+                    )} ${
+                      props.selectedMarketDetails.symbol
+                    }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1160,35 +1451,39 @@ function Dashboard() {
                   variant="outlined"
                   label={props.selectedMarketDetails.symbol}
                   value={withdrawAmount}
-                  onChange={handleWithdrawAmountChange}
-                // InputProps={{
-                //   endAdornment: (
-                //     <InputAdornment
-                //       position="end"
-                //       onClick={() => {
-                //         setWithdrawAmount(
-                //           getMaxAmount(
-                //             props.selectedMarketDetails.symbol,
-                //             props.selectedMarketDetails.walletBalance
-                //           ).toString()
-                //         );
-                //       }}
-                //     >
-                //       Max
-                //     </InputAdornment>
-                //   ),
-                // }}
+                  onChange={(event) => {
+                    handleWithdrawAmountChange(event.target.value);
+                  }}
+                  // InputProps={{
+                  //   endAdornment: (
+                  //     <InputAdornment
+                  //       position="end"
+                  //       onClick={() => {
+                  //         setWithdrawAmount(
+                  //           getMaxAmount(
+                  //             props.selectedMarketDetails.symbol,
+                  //             props.selectedMarketDetails.walletBalance
+                  //           ).toString()
+                  //         );
+                  //       }}
+                  //     >
+                  //       Max
+                  //     </InputAdornment>
+                  //   ),
+                  // }}
                 />
                 <div style={{ height: "30px", color: "red" }}>
                   {withdrawValidationMessage}
                 </div>
                 <List>
                   <DialogSupplyRatesSection
+                    generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
                   />
                   <br />
                   <DialogBorrowLimitSection
                     generalDetails={props.generalDetails}
+                    newBorrowLimit={newBorrowLimit2}
                   />
                   <br />
                   <br />
@@ -1205,7 +1500,8 @@ function Dashboard() {
                           withdrawAmount,
                           props.selectedMarketDetails.decimals,
                           setTxSnackbarMessage,
-                          setTxSnackbarOpen
+                          setTxSnackbarOpen,
+                          props.selectedMarketDetails.symbol
                         );
                       }}
                     >
@@ -1221,8 +1517,9 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.supplyBalanceInTokenUnit,
                       4
-                    )} ${props.selectedMarketDetails.symbol
-                      }`}</ListItemSecondaryAction>
+                    )} ${
+                      props.selectedMarketDetails.symbol
+                    }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1255,8 +1552,7 @@ function Dashboard() {
     const handleTabChange = (event, newValue) => {
       setTabValue(newValue);
     };
-    const handleBorrowAmountChange = (event) => {
-      const amount = event.target.value;
+    const handleBorrowAmountChange = (amount) => {
       setBorrowAmount(amount);
 
       if (amount <= 0) {
@@ -1272,8 +1568,7 @@ function Dashboard() {
         setBorrowValidationMessage("");
       }
     };
-    const handleRepayAmountChange = (event) => {
-      const amount = event.target.value;
+    const handleRepayAmountChange = (amount) => {
       setRepayAmount(amount);
 
       if (amount <= 0) {
@@ -1325,35 +1620,41 @@ function Dashboard() {
                   variant="outlined"
                   label={props.selectedMarketDetails.symbol}
                   value={borrowAmount}
-                  onChange={handleBorrowAmountChange}
-                // InputProps={{
-                //   endAdornment: (
-                //     <InputAdornment
-                //       position="end"
-                //       onClick={() => {
-                //         setBorrowAmount(
-                //           getMaxAmount(
-                //             props.selectedMarketDetails.symbol,
-                //             props.selectedMarketDetails.walletBalance
-                //           ).toString()
-                //         );
-                //       }}
-                //     >
-                //       Max
-                //     </InputAdornment>
-                //   ),
-                // }}
+                  onChange={(event) => {
+                    handleBorrowAmountChange(event.target.value);
+                  }}
+                  // InputProps={{
+                  //   endAdornment: (
+                  //     <InputAdornment
+                  //       position="end"
+                  //       onClick={() => {
+                  //         setBorrowAmount(
+                  //           getMaxAmount(
+                  //             props.selectedMarketDetails.symbol,
+                  //             props.selectedMarketDetails.walletBalance
+                  //           ).toString()
+                  //         );
+                  //       }}
+                  //     >
+                  //       Max
+                  //     </InputAdornment>
+                  //   ),
+                  // }}
                 />
                 <div style={{ height: "30px", color: "red" }}>
                   {borrowValidationMessage}
                 </div>
                 <List>
                   <DialogBorrowRatesSection
+                    generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
                   />
                   <br />
                   <DialogBorrowLimitSection2
                     generalDetails={props.generalDetails}
+                    selectedMarketDetails={props.selectedMarketDetails}
+                    borrowAmount={borrowAmount}
+                    repayAmount={0}
                   />
                   <br />
                   <br />
@@ -1370,7 +1671,8 @@ function Dashboard() {
                           borrowAmount,
                           props.selectedMarketDetails.decimals,
                           setTxSnackbarMessage,
-                          setTxSnackbarOpen
+                          setTxSnackbarOpen,
+                          props.selectedMarketDetails.symbol
                         );
                       }}
                     >
@@ -1386,8 +1688,9 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.borrowBalanceInTokenUnit,
                       4
-                    )} ${props.selectedMarketDetails.symbol
-                      }`}</ListItemSecondaryAction>
+                    )} ${
+                      props.selectedMarketDetails.symbol
+                    }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1398,19 +1701,24 @@ function Dashboard() {
                   variant="outlined"
                   label={props.selectedMarketDetails.symbol}
                   value={repayAmount}
-                  onChange={handleRepayAmountChange}
+                  onChange={(event) => {
+                    handleRepayAmountChange(event.target.value);
+                  }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment
                         position="end"
                         onClick={() => {
-                          setRepayAmount(
-                            BigNumber.minimum(getMaxAmount(
-                              props.selectedMarketDetails.symbol,
-                              props.selectedMarketDetails.walletBalance
-                            ), props.selectedMarketDetails.borrowBalanceInTokenUnit).toString()
+                          handleRepayAmountChange(
+                            BigNumber.minimum(
+                              getMaxAmount(
+                                props.selectedMarketDetails.symbol,
+                                props.selectedMarketDetails.walletBalance
+                              ),
+                              props.selectedMarketDetails
+                                .borrowBalanceInTokenUnit
+                            ).toString()
                           );
-                          setRepayValidationMessage("");
                         }}
                       >
                         Max
@@ -1423,11 +1731,15 @@ function Dashboard() {
                 </div>
                 <List>
                   <DialogBorrowRatesSection
+                    generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
                   />
                   <br />
                   <DialogBorrowLimitSection2
                     generalDetails={props.generalDetails}
+                    selectedMarketDetails={props.selectedMarketDetails}
+                    borrowAmount={0}
+                    repayAmount={repayAmount}
                   />
                   <br />
                   <br />
@@ -1435,44 +1747,45 @@ function Dashboard() {
                     {props.selectedMarketDetails.underlyingAllowance?.isGreaterThan(
                       0
                     ) &&
-                      props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
-                        +repayAmount
-                      ) ? (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          disabled={!repayAmount || repayValidationMessage}
-                          block
-                          onClick={() => {
-                            handleRepay(
-                              props.selectedMarketDetails.underlyingAddress,
-                              props.selectedMarketDetails.pTokenAddress,
-                              repayAmount,
-                              props.selectedMarketDetails.decimals,
-                              setTxSnackbarMessage,
-                              setTxSnackbarOpen
-                            );
-                          }}
-                        >
-                          Repay
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          block
-                          onClick={() => {
-                            handleEnable(
-                              props.selectedMarketDetails.underlyingAddress,
-                              props.selectedMarketDetails.pTokenAddress,
-                              setTxSnackbarMessage,
-                              setTxSnackbarOpen
-                            );
-                          }}
-                        >
-                          Enable
-                        </Button>
-                      )}
+                    props.selectedMarketDetails.underlyingAllowance?.isGreaterThanOrEqualTo(
+                      +repayAmount
+                    ) ? (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        disabled={!repayAmount || repayValidationMessage}
+                        block
+                        onClick={() => {
+                          handleRepay(
+                            props.selectedMarketDetails.underlyingAddress,
+                            props.selectedMarketDetails.pTokenAddress,
+                            repayAmount,
+                            props.selectedMarketDetails.decimals,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen,
+                            props.selectedMarketDetails.symbol
+                          );
+                        }}
+                      >
+                        Repay
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        block
+                        onClick={() => {
+                          handleEnable(
+                            props.selectedMarketDetails.underlyingAddress,
+                            props.selectedMarketDetails.pTokenAddress,
+                            setTxSnackbarMessage,
+                            setTxSnackbarOpen
+                          );
+                        }}
+                      >
+                        Enable
+                      </Button>
+                    )}
                   </ListItem>
                 </List>
                 <List>
@@ -1483,8 +1796,9 @@ function Dashboard() {
                     >{`${roundToDecimalPlaces(
                       props.selectedMarketDetails.walletBalance,
                       4
-                    )} ${props.selectedMarketDetails.symbol
-                      }`}</ListItemSecondaryAction>
+                    )} ${
+                      props.selectedMarketDetails.symbol
+                    }`}</ListItemSecondaryAction>
                   </ListItem>
                 </List>
               </TabPanel>
@@ -1523,8 +1837,9 @@ function Dashboard() {
               alt="activity-user"
             />
           )}
-          {`${props.selectedMarketDetails.isEnterMarket ? "Disable" : "Enable"
-            } as Collateral`}
+          {`${
+            props.selectedMarketDetails.isEnterMarket ? "Disable" : "Enable"
+          } as Collateral`}
         </DialogTitle>
         <DialogContent>
           {props.selectedMarketDetails.symbol && (
@@ -1538,12 +1853,12 @@ function Dashboard() {
                     collateral.
                   </Typography>
                 ) : (
-                    <Typography>
-                      Each asset used as collateral increases your borrowing
-                      limit. Be careful, this can subject the asset to being
-                      seized in liquidation.
-                    </Typography>
-                  )}
+                  <Typography>
+                    Each asset used as collateral increases your borrowing
+                    limit. Be careful, this can subject the asset to being
+                    seized in liquidation.
+                  </Typography>
+                )}
               </ListItem>
               <DialogBorrowLimitSection generalDetails={props.generalDetails} />
               <br />
@@ -1565,21 +1880,21 @@ function Dashboard() {
                     {`Disable ${props.selectedMarketDetails.symbol} as Collateral`}
                   </Button>
                 ) : (
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      block
-                      onClick={() => {
-                        handleEnterMarket(
-                          props.selectedMarketDetails.pTokenAddress,
-                          setTxSnackbarMessage,
-                          setTxSnackbarOpen
-                        );
-                      }}
-                    >
-                      {`Use ${props.selectedMarketDetails.symbol} as Collateral`}
-                    </Button>
-                  )}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    block
+                    onClick={() => {
+                      handleEnterMarket(
+                        props.selectedMarketDetails.pTokenAddress,
+                        setTxSnackbarMessage,
+                        setTxSnackbarOpen
+                      );
+                    }}
+                  >
+                    {`Use ${props.selectedMarketDetails.symbol} as Collateral`}
+                  </Button>
+                )}
               </ListItem>
             </List>
           )}
@@ -1650,7 +1965,11 @@ function Dashboard() {
       />
       <LinearProgress
         style={{
-          visibility: generalDetails.netApy || !chainIdToName[parseInt(library?.provider?.chainId)] ? "hidden" : "visible",
+          visibility:
+            generalDetails.netApy ||
+            !chainIdToName[parseInt(library?.provider?.chainId)]
+              ? "hidden"
+              : "visible",
           margin: "0px 0px 8px 0px",
         }}
       />
@@ -1664,7 +1983,83 @@ function Dashboard() {
           setOtherSnackbarOpen(false);
         }}
       />
-      <Row>
+      <Card>
+        <Card.Body style={{ padding: "20px 20px 0px 20px" }}>
+          <Row>
+            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+              <h6 className="mb-4">Supply Balance</h6>
+              <div className="row d-flex align-items-center">
+                <div className="col-12">
+                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                    <i className={`fa fa-circle text-c-green f-10 m-r-15`} />
+                    {`$${zeroStringIfNullish(
+                      generalDetails.totalSupplyBalance?.toFixed(2),
+                      2
+                    )}`}
+                  </h3>
+                </div>
+              </div>
+            </Col>
+            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+              <h6 className="mb-4">Net APY</h6>
+              <div className="row d-flex align-items-center">
+                <div className="col-12">
+                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                    <i className={`fa fa-circle text-c-green f-10 m-r-15`} />
+                    {`${zeroStringIfNullish(
+                      generalDetails.netApy?.toFixed(2),
+                      2
+                    )}%`}
+                  </h3>
+                </div>
+              </div>
+            </Col>
+            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+              <h6 className="mb-4">Borrow Balance</h6>
+              <div className="row d-flex align-items-center">
+                <div className="col-12">
+                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                    <i className={`fa fa-circle text-c-yellow f-10 m-r-15`} />
+                    {`$${zeroStringIfNullish(
+                      generalDetails.totalBorrowBalance?.toFixed(2),
+                      2
+                    )}`}
+                  </h3>
+                </div>
+              </div>
+            </Col>
+            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+              <h6 className="mb-4">Borrow Limit</h6>
+              <div className="row d-flex align-items-center">
+                <div className="col-12">
+                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                    <i className={`fa fa-circle text-c-yellow f-10 m-r-15`} />
+                    <span>
+                      {`$${zeroStringIfNullish(
+                        generalDetails.totalBorrowLimit?.toFixed(2),
+                        2
+                      )}`}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "50%",
+                        margin: "0px 0px 0px 10px",
+                        color: "grey",
+                      }}
+                    >
+                      {`(${zeroStringIfNullish(
+                        generalDetails.totalBorrowLimitUsedPercent?.toFixed(2),
+                        2
+                      )}% Used)`}
+                    </span>
+                  </h3>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+      {/* <Row>
         <Col xs={12} md={6}>
           <Card>
             <Card.Body className="border-bottom">
@@ -1765,9 +2160,9 @@ function Dashboard() {
             </Card.Body>
           </Card>
         </Col>
-      </Row>
+      </Row> */}
       <Row>
-        <Col xs={12} md={6}>
+        <Col xs={12} lg={6}>
           <Card className="Recent-Users">
             <Card.Header style={{ borderBottom: "none" }}>
               <Card.Title as="h5">Supply Markets</Card.Title>
@@ -1779,6 +2174,7 @@ function Dashboard() {
                     <th>Asset</th>
                     <th></th>
                     <th>APY</th>
+                    <th>Supplied</th>
                     <th>Wallet</th>
                     <th>Collateral</th>
                   </tr>
@@ -1793,6 +2189,7 @@ function Dashboard() {
                       >
                         Supplying
                       </td>
+                      <td></td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -1819,6 +2216,7 @@ function Dashboard() {
                       <td></td>
                       <td></td>
                       <td></td>
+                      <td></td>
                     </tr>
                   )}
                   {allMarketDetails
@@ -1831,7 +2229,7 @@ function Dashboard() {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} md={6}>
+        <Col xs={12} lg={6}>
           <Card className="Recent-Users">
             <Card.Header style={{ borderBottom: "none" }}>
               <Card.Title as="h5">Borrow Markets</Card.Title>
@@ -1843,6 +2241,7 @@ function Dashboard() {
                     <th>Asset</th>
                     <th></th>
                     <th>APY</th>
+                    <th>Borrowed</th>
                     <th>Wallet</th>
                     <th>Liquidity</th>
                   </tr>
@@ -1857,6 +2256,7 @@ function Dashboard() {
                       >
                         Borrowing
                       </td>
+                      <td></td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -1879,6 +2279,7 @@ function Dashboard() {
                       >
                         Other Markets
                       </td>
+                      <td></td>
                       <td></td>
                       <td></td>
                       <td></td>

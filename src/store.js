@@ -1,7 +1,7 @@
 import React, { createContext, useReducer } from "react";
 
 const initialState = {
-  provider: null,
+  gasPrice: null,
 };
 const store = createContext(initialState);
 const { Provider } = store;
@@ -9,9 +9,9 @@ const { Provider } = store;
 const StateProvider = ({ children }) => {
   const [state, dispatch] = useReducer((state, action) => {
     switch (action.type) {
-      case "UPDATE_PROVIDER":
+      case "UPDATE_GAS_PRICE":
         return Object.assign({}, state, {
-          provider: action.provider,
+          gasPrice: action.gasPrice,
         });
       default:
         throw new Error("Unknown action type");
