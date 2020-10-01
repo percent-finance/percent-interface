@@ -1067,7 +1067,7 @@ function Dashboard() {
             {props.newBorrowLimit ? (
               <span>
                 <ArrowRightIcon style={{ color: colors.lightBlue[500] }} />
-                {`$${props.newBorrowLimit?.toFixed(2)}`}
+                {`$${zeroStringIfNullish(props.newBorrowLimit?.toFixed(2), 2)}`}
               </span>
             ) : null}
           </ListItemSecondaryAction>
