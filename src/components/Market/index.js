@@ -55,6 +55,7 @@ function Dashboard() {
   const gasLimit = "250000";
   const gasLimitDaiSupply = "535024";
   const gasLimitDaiWithdraw = "330000";
+  const gasLimitWithdraw = "450000";
   const gasLimitEnable = "62020";
   const gasLimitDaiEnable = "66537";
   const gasLimitBorrow = "702020";
@@ -696,7 +697,7 @@ function Dashboard() {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: symbol === "DAI" ? gasLimitDaiWithdraw : gasLimit,
+      gasLimit: symbol === "DAI" ? gasLimitDaiWithdraw : gasLimitWithdraw,
       gasPrice: globalState.gasPrice.toString(),
     };
 
