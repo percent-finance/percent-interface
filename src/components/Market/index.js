@@ -40,6 +40,7 @@ import { MaxUint256 } from "@ethersproject/constants";
 const Compound = require("@compound-finance/compound-js/dist/nodejs/src/index.js");
 const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src/constants.js");
 const BigNumber = require("bignumber.js");
+BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
 
 function Dashboard() {
   const { state: globalState, dispatch } = useContext(store);
