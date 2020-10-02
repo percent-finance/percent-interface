@@ -639,7 +639,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
@@ -680,7 +680,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
@@ -718,7 +718,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
@@ -756,7 +756,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
@@ -797,7 +797,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
@@ -824,7 +824,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
@@ -851,7 +851,7 @@ function Dashboard() {
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
-      setTxSnackbarMessage("Error occurred!");
+      setTxSnackbarMessage(`Error: ${JSON.stringify(e)}`);
     }
 
     setTxSnackbarOpen(true);
