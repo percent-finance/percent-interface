@@ -22,6 +22,7 @@ import Snackbar from "@material-ui/core/Snackbar";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
 import * as colors from "@material-ui/core/colors";
+import Alert from "@material-ui/lab/Alert";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
@@ -1241,9 +1242,27 @@ function Dashboard() {
   //       onClose={() => setWarningDialogOpen(false)}
   //     >
   //       <DialogTitle style={{ padding: "50px 100px 10px 100px" }}>
-  //         Please connect to wallet
+  //         IMPORTANT: Please understand the contract admin risk before using
+  //         Percent Money Market
   //       </DialogTitle>
   //       <DialogContent style={{ padding: "10px 100px 50px 100px" }}>
+  //         <p>
+  //           The admin of the core contract is currently set to its deployer,
+  //           that means it is possible for us to rug pull (we will not, but it is
+  //           technically possible)!
+  //         </p>
+  //         <p>
+  //           The admin is now being transferred to a timelock contract and the
+  //           transfer is expected to be completed on Oct 3rd at ~3AM (It requires
+  //           48 hour to complete).
+  //         </p>
+  //         <p>
+  //           Until the admin is transferred, please understand the risk before
+  //           using Percent Money Market!
+  //         </p>
+  //         <a href="https://twitter.com/PercentFinance/status/1311713112479809537?s=20">
+  //           Twitter Announcement
+  //         </a>
   //       </DialogContent>
   //     </Dialog>
   //   );
@@ -1957,6 +1976,43 @@ function Dashboard() {
 
   return (
     <Aux>
+      <LinearProgress
+        style={{
+          visibility:
+            generalDetails.netApy ||
+            !chainIdToName[parseInt(library?.provider?.chainId)]
+              ? "hidden"
+              : "visible",
+          margin: "0px 0px 8px 0px",
+        }}
+      />
+      <Alert severity="warning" style={{ margin: "0px 0px 15px 0px" }}>
+        <h6>
+          IMPORTANT: Please understand the contract admin risk before using
+          Percent Money Market
+        </h6>
+        <p>
+          The admin of the core contract is currently set to its deployer, that
+          means it is possible for us to rug pull (we will not, but it is
+          technically possible)!
+        </p>
+        <p>
+          In order to eliminate the possibility of rug pull, the admin is now
+          being transferred to a timelock contract and the transfer is expected
+          to be completed on Oct 3rd at ~3AM (It requires 48 hour to complete).
+        </p>
+        <p>
+          Until the admin is transferred, please understand the risk before
+          using Percent Money Market!
+        </p>
+        <a
+          href="https://twitter.com/PercentFinance/status/1311713112479809537?s=20"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Twitter Announcement
+        </a>
+      </Alert>
       {/* <WarningDialog /> */}
       <SupplyDialog
         open={supplyDialogOpen}
@@ -1972,16 +2028,6 @@ function Dashboard() {
         open={enterMarketDialogOpen}
         selectedMarketDetails={selectedMarketDetails}
         generalDetails={generalDetails}
-      />
-      <LinearProgress
-        style={{
-          visibility:
-            generalDetails.netApy ||
-            !chainIdToName[parseInt(library?.provider?.chainId)]
-              ? "hidden"
-              : "visible",
-          margin: "0px 0px 8px 0px",
-        }}
       />
       <OtherSnackbar
         open={otherSnackbarOpen}
