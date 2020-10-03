@@ -40,7 +40,7 @@ import { MaxUint256 } from "@ethersproject/constants";
 const Compound = require("@compound-finance/compound-js/dist/nodejs/src/index.js");
 const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src/constants.js");
 const BigNumber = require("bignumber.js");
-BigNumber.config({ EXPONENTIAL_AT: 1e+9 });
+BigNumber.config({ EXPONENTIAL_AT: 1e9 });
 
 function Dashboard() {
   const { state: globalState, dispatch } = useContext(store);
@@ -1987,31 +1987,14 @@ function Dashboard() {
           margin: "0px 0px 8px 0px",
         }}
       />
-      <Alert severity="warning" style={{ margin: "0px 0px 15px 0px" }}>
-        <h6>
-          IMPORTANT: Please understand the contract admin risk before using
-          Percent Money Market
-        </h6>
-        <p>
-          The admin of the core contract is currently set to its deployer, that
-          means it is possible for us to rug pull (we will not, but it is
-          technically possible)!
-        </p>
-        <p>
-          In order to eliminate the possibility of rug pull, the admin is now
-          being transferred to a timelock contract and the transfer is expected
-          to be completed on Oct 3rd at ~3AM (It requires 48 hour to complete).
-        </p>
-        <p>
-          Until the admin is transferred, please understand the risk before
-          using Percent Money Market!
-        </p>
+      <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
+        <span>Admin is now transferred to a timelock contract. </span>
         <a
-          href="https://twitter.com/PercentFinance/status/1311713112479809537?s=20"
+          href="https://medium.com/percent-finance/update-on-percents-launch-a55318ecdb3c"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Twitter Announcement
+          Learn more
         </a>
       </Alert>
       {/* <WarningDialog /> */}
