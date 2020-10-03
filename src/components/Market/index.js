@@ -55,14 +55,16 @@ function Dashboard() {
   const [allMarketDetails, setAllMarketDetails] = useState([]);
   const [generalDetails, setGeneralDetails] = useState([]);
   const gasLimit = "250000";
-  const gasLimitDaiSupply = "535024";
-  const gasLimitDaiWithdraw = "330000";
+  const gasLimitSupplyDai = "535024";
+  const gasLimitSupplySnx = "450000";
+  const gasLimitWithdrawDai = "330000";
+  const gasLimitWithdrawSnx = "550000";
   const gasLimitWithdraw = "450000";
   const gasLimitEnable = "70000";
-  const gasLimitDaiEnable = "66537";
+  const gasLimitEnableDai = "66537";
   const gasLimitBorrow = "702020";
-  const gasLimitDaiBorrow = "729897";
-  const gasLimitDaiRepay = "535024";
+  const gasLimitBorrowDai = "729897";
+  const gasLimitRepayDai = "535024";
 
   const gasLimitEnterMarket = "112020";
 
@@ -632,7 +634,7 @@ function Dashboard() {
         {
           network: chainIdToName[parseInt(library.provider.chainId)],
           provider: library.provider,
-          gasLimit: symbol === "DAI" ? gasLimitDaiEnable : gasLimitEnable,
+          gasLimit: symbol === "DAI" ? gasLimitEnableDai : gasLimitEnable,
           gasPrice: globalState.gasPrice.toString(),
           abi: compoundConstants.abi.cErc20,
         } // [optional] call options, provider, network, ethers.js "overrides"
@@ -659,7 +661,12 @@ function Dashboard() {
     let options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: symbol === "DAI" ? gasLimitDaiSupply : gasLimit,
+      gasLimit:
+        symbol === "DAI"
+          ? gasLimitSupplyDai
+          : symbol === "SNX"
+          ? gasLimitSupplySnx
+          : gasLimit,
       gasPrice: globalState.gasPrice.toString(),
     };
 
@@ -699,7 +706,12 @@ function Dashboard() {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: symbol === "DAI" ? gasLimitDaiWithdraw : gasLimitWithdraw,
+      gasLimit:
+        symbol === "DAI"
+          ? gasLimitWithdrawDai
+          : symbol === "SNX"
+          ? gasLimitWithdrawSnx
+          : gasLimitWithdraw,
       gasPrice: globalState.gasPrice.toString(),
     };
 
@@ -737,7 +749,7 @@ function Dashboard() {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: symbol === "DAI" ? gasLimitDaiBorrow : gasLimitBorrow,
+      gasLimit: symbol === "DAI" ? gasLimitBorrowDai : gasLimitBorrow,
       gasPrice: globalState.gasPrice.toString(),
     };
 
@@ -776,7 +788,7 @@ function Dashboard() {
     let options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: symbol === "DAI" ? gasLimitDaiRepay : gasLimit,
+      gasLimit: symbol === "DAI" ? gasLimitRepayDai : gasLimit,
       gasPrice: globalState.gasPrice.toString(),
     };
 
