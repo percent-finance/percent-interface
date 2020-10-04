@@ -57,7 +57,7 @@ function Dashboard() {
   const gasLimit = "250000";
   const gasLimitSupplyDai = "535024";
   const gasLimitSupplySnx = "450000";
-  const gasLimitWithdrawDai = "330000";
+  const gasLimitWithdrawDai = "450000";
   const gasLimitWithdrawSnx = "550000";
   const gasLimitWithdraw = "450000";
   const gasLimitEnable = "70000";
