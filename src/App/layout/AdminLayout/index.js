@@ -14,11 +14,10 @@ import { useEagerConnect, useInactiveListener } from "../../../hooks";
 import { useWeb3React } from "@web3-react/core";
 
 import { chainIdToName } from "../../../constants";
-import {
-  roundToDecimalPlaces,
-  zeroStringIfNullish,
-  eX,
-} from "../../../helpers";
+import { zeroStringIfNullish, eX } from "../../../helpers";
+const BigNumber = require("bignumber.js");
+BigNumber.config({ EXPONENTIAL_AT: 1e9 });
+
 const Compound = require("@compound-finance/compound-js/dist/nodejs/src/index.js");
 // const compoundConstants = require("@compound-finance/compound-js/dist/nodejs/src/constants.js");
 
@@ -43,7 +42,6 @@ function AdminLayout() {
   }, [library, account]);
 
   function ConnectButton() {
-
     const onConnectClick = () => {
       activate(injected);
     };
@@ -62,10 +60,10 @@ function AdminLayout() {
             </Dropdown.Menu>
           </Dropdown>
         ) : (
-            <Button onClick={onConnectClick} variant="outline-secondary">
-              Connect
-            </Button>
-          )}
+          <Button onClick={onConnectClick} variant="outline-secondary">
+            Connect
+          </Button>
+        )}
       </div>
     );
   }
@@ -89,21 +87,42 @@ function AdminLayout() {
             src={require(`../../../assets/images/PCT-logo.png`)}
             alt=""
           />
-          {`${roundToDecimalPlaces(zeroStringIfNullish(pctBalance), 4)}`}
+          {`${new BigNumber(zeroStringIfNullish(pctBalance))
+            .decimalPlaces(4)
+            .toString()}`}
         </Dropdown.Toggle>
         <Dropdown.Menu>
-          <Dropdown.Item style={{ cursor: "default", padding: "20px 20px 20px 20px" }}>
+          <Dropdown.Item
+            style={{ cursor: "default", padding: "20px 20px 20px 20px" }}
+          >
             <span>
-              <span style={{ color: "grey", margin: "0px 10px 0px 0px" }}>PCT Balance</span>
-              {`${roundToDecimalPlaces(zeroStringIfNullish(pctBalance), 4)}`}
+              <span style={{ color: "grey", margin: "0px 10px 0px 0px" }}>
+                PCT Balance
+              </span>
+              {`${new BigNumber(zeroStringIfNullish(pctBalance))
+                .decimalPlaces(4)
+                .toString()}`}
             </span>
           </Dropdown.Item>
-          <Dropdown.Item style={{ cursor: "default", padding: "12px 20px 12px 20px" }}>
+          <Dropdown.Item
+            style={{ cursor: "default", padding: "12px 20px 12px 20px" }}
+          >
             <span>
-              <span style={{ color: "grey", margin: "0px 10px 0px 0px" }}>PCT Earned</span>
-              {`${roundToDecimalPlaces(zeroStringIfNullish(pctEarned), 4)}`}
+              <span style={{ color: "grey", margin: "0px 10px 0px 0px" }}>
+                PCT Earned
+              </span>
+              {`${new BigNumber(zeroStringIfNullish(pctEarned))
+                .decimalPlaces(4)
+                .toString()}`}
             </span>
-            <Button style={{ margin: "0px 0px 0px 60px" }} onClick={() => { claimPct(account) }}>Collect</Button>
+            <Button
+              style={{ margin: "0px 0px 0px 60px" }}
+              onClick={() => {
+                claimPct(account);
+              }}
+            >
+              Collect
+            </Button>
           </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
@@ -131,7 +150,11 @@ function AdminLayout() {
       const compBalanceMetadata = await Compound.eth.read(
         process.env.REACT_APP_COMPOUND_LENS_ADDRESS,
         "function getCompBalanceMetadataExt(address, address, address) returns (uint, uint, address, uint)",
-        [process.env.REACT_APP_PCT_ADDRESS, process.env.REACT_APP_COMPTROLLER_ADDRESS, walletAddress], // [optional] parameters
+        [
+          process.env.REACT_APP_PCT_ADDRESS,
+          process.env.REACT_APP_COMPTROLLER_ADDRESS,
+          walletAddress,
+        ], // [optional] parameters
         {
           network: chainIdToName[parseInt(library.provider.chainId)],
           _compoundProvider: library,
@@ -143,7 +166,10 @@ function AdminLayout() {
   };
 
   const claimPct = async (walletAddress) => {
-    console.log("globalState.gasPrice.toString()", globalState.gasPrice.toString())
+    console.log(
+      "globalState.gasPrice.toString()",
+      globalState.gasPrice.toString()
+    );
     let parameters = [walletAddress];
     let options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
@@ -156,7 +182,18 @@ function AdminLayout() {
     try {
       const tx = await Compound.eth.trx(
         process.env.REACT_APP_COMPTROLLER_ADDRESS,
-        { "constant": false, "inputs": [{ "internalType": "address", "name": "holder", "type": "address" }], "name": "claimComp", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function", "signature": "0xe9af0292" },
+        {
+          constant: false,
+          inputs: [
+            { internalType: "address", name: "holder", type: "address" },
+          ],
+          name: "claimComp",
+          outputs: [],
+          payable: false,
+          stateMutability: "nonpayable",
+          type: "function",
+          signature: "0xe9af0292",
+        },
         parameters, // [optional] parameters
         options // [optional] call options, provider, network, ethers.js "overrides"
       );
@@ -168,7 +205,7 @@ function AdminLayout() {
     }
 
     setOtherSnackbarOpen(true);
-  }
+  };
 
   const OtherSnackbar = (props) => {
     return (

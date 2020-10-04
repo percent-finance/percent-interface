@@ -16,6 +16,7 @@ export const convertToLargeNumberRepresentation = (value) => {
   }
 };
 
+// This function is not used, because it can be replaced by new BigNumber().decimalPlaces()
 export const roundToDecimalPlaces = (value, n) => {
   const factor = Math.pow(10, n);
   return Math.round((+value + Number.EPSILON) * factor) / factor;

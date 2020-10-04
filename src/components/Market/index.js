@@ -28,7 +28,6 @@ import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
   eX,
   convertToLargeNumberRepresentation,
-  roundToDecimalPlaces,
   zeroStringIfNullish,
 } from "../../helpers";
 import { store } from "../../store";
@@ -57,7 +56,7 @@ function Dashboard() {
   const gasLimit = "250000";
   const gasLimitSupplyDai = "535024";
   const gasLimitSupplySnx = "450000";
-  const gasLimitWithdrawDai = "450000";
+  const gasLimitWithdrawDai = "550000";
   const gasLimitWithdrawSnx = "550000";
   const gasLimitWithdraw = "450000";
   const gasLimitEnable = "70000";
@@ -776,37 +775,64 @@ function Dashboard() {
   };
 
   const handleRepay = async (
+    walletAddress,
     underlyingAddress,
     pTokenAddress,
     amount,
+    isRepayMax,
     decimals,
     setTxSnackbarMessage,
     setTxSnackbarOpen,
     symbol
   ) => {
-    let parameters = [];
-    let options = {
+    const parameters = [];
+    const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
       gasLimit: symbol === "DAI" ? gasLimitRepayDai : gasLimit,
       gasPrice: globalState.gasPrice.toString(),
     };
 
-    if (underlyingAddress === ethDummyAddress) {
-      options.value = eX(amount, 18).toString();
-      options.abi = compoundConstants.abi.cEther;
-    } else {
-      parameters.push(eX(amount, decimals).toString());
-      options.abi = compoundConstants.abi.cErc20;
-    }
-
     try {
-      const tx = await Compound.eth.trx(
-        pTokenAddress,
-        "repayBorrow",
-        parameters, // [optional] parameters
-        options // [optional] call options, provider, network, ethers.js "overrides"
-      );
+      let tx;
+      if (underlyingAddress === ethDummyAddress) {
+        parameters.push(walletAddress);
+        parameters.push(pTokenAddress);
+        options.value = eX(amount, 18).toString();
+        tx = await Compound.eth.trx(
+          process.env.REACT_APP_MAXIMILLION_ADDRESS,
+          {
+            constant: false,
+            inputs: [
+              { internalType: "address", name: "borrower", type: "address" },
+              { internalType: "address", name: "cEther_", type: "address" },
+            ],
+            name: "repayBehalfExplicit",
+            outputs: [],
+            payable: true,
+            stateMutability: "payable",
+            type: "function",
+          },
+          [walletAddress, pTokenAddress], // [optional] parameters
+          options // [optional] call options, provider, network, ethers.js "overrides"
+        );
+      } else {
+        if (isRepayMax) {
+          parameters.push(
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          ); //-1 (i.e. 2256 - 1)
+        } else {
+          parameters.push(eX(amount, decimals).toString());
+        }
+        options.abi = compoundConstants.abi.cErc20;
+        tx = await Compound.eth.trx(
+          pTokenAddress,
+          "repayBorrow",
+          parameters, // [optional] parameters
+          options // [optional] call options, provider, network, ethers.js "overrides"
+        );
+      }
+
       console.log("tx", JSON.stringify(tx));
       setTxSnackbarMessage(`Transaction sent: ${tx.hash}`);
     } catch (e) {
@@ -890,6 +916,14 @@ function Dashboard() {
     }
   };
 
+  const getMaxRepayAmount = (symbol, borrowBalanceInTokenUnit) => {
+    if (symbol === "ETH") {
+      return borrowBalanceInTokenUnit.times(1.001).decimalPlaces(18); // Setting it to a bit larger, this makes sure the user can repay 100%.
+    } else {
+      return borrowBalanceInTokenUnit.times(1.001).decimalPlaces(18); // The same as ETH for now. The transaction will use -1 anyway.
+    }
+  };
+
   const StyledSwitch = withStyles({
     switchBase: {
       "&$checked": {
@@ -930,19 +964,19 @@ function Dashboard() {
         </td>
         <td>
           <h6 className="text-muted">
-            {roundToDecimalPlaces(props.details.supplyBalanceInTokenUnit, 4)}
+            {props.details.supplyBalanceInTokenUnit.decimalPlaces(4).toString()}
           </h6>
         </td>
         <td>
           <h6 className="text-muted">
             <i
               className={`fa fa-circle${
-                roundToDecimalPlaces(props.details.walletBalance, 4) <= 0
+                props.details.walletBalance.decimalPlaces(4).toNumber() <= 0
                   ? "-o"
                   : ""
               } text-c-green f-10 m-r-15`}
             />
-            {roundToDecimalPlaces(props.details.walletBalance, 4)}
+            {props.details.walletBalance.decimalPlaces(4).toString()}
           </h6>
         </td>
         <td>
@@ -986,12 +1020,12 @@ function Dashboard() {
         </td>
         <td>
           <h6 className="text-muted">
-            {roundToDecimalPlaces(props.details.borrowBalanceInTokenUnit, 4)}
+            {props.details.borrowBalanceInTokenUnit.decimalPlaces(4).toString()}
           </h6>
         </td>
         <td>
           <h6 className="text-muted">
-            {roundToDecimalPlaces(props.details.walletBalance, 4)}
+            {props.details.walletBalance.decimalPlaces(4).toString()}
           </h6>
         </td>
         <td>
@@ -1467,10 +1501,9 @@ function Dashboard() {
                     <ListItemText secondary={`Wallet Balance`} />
                     <ListItemSecondaryAction
                       style={{ margin: "0px 15px 0px 0px" }}
-                    >{`${roundToDecimalPlaces(
-                      props.selectedMarketDetails.walletBalance,
-                      4
-                    )} ${
+                    >{`${props.selectedMarketDetails.walletBalance
+                      .decimalPlaces(4)
+                      .toString()} ${
                       props.selectedMarketDetails.symbol
                     }`}</ListItemSecondaryAction>
                   </ListItem>
@@ -1546,8 +1579,7 @@ function Dashboard() {
                     <ListItemText secondary={`Protocol Balance`} />
                     <ListItemSecondaryAction
                       style={{ margin: "0px 15px 0px 0px" }}
-                    >{`${roundToDecimalPlaces(
-                      props.selectedMarketDetails.supplyBalanceInTokenUnit,
+                    >{`${props.selectedMarketDetails.supplyBalanceInTokenUnit.decimalPlaces(
                       4
                     )} ${
                       props.selectedMarketDetails.symbol
@@ -1576,6 +1608,7 @@ function Dashboard() {
     const [tabValue, setTabValue] = useState(0);
     const [borrowAmount, setBorrowAmount] = useState("");
     const [repayAmount, setRepayAmount] = useState("");
+    const [isRepayMax, setIsRepayMax] = useState(false);
     const [borrowValidationMessage, setBorrowValidationMessage] = useState("");
     const [repayValidationMessage, setRepayValidationMessage] = useState("");
     const [txSnackbarOpen, setTxSnackbarOpen] = useState(false);
@@ -1600,12 +1633,13 @@ function Dashboard() {
         setBorrowValidationMessage("");
       }
     };
-    const handleRepayAmountChange = (amount) => {
+    const handleRepayAmountChange = (amount, isMax) => {
       setRepayAmount(amount);
 
       if (amount <= 0) {
         setRepayValidationMessage("Amount must be > 0");
       } else if (
+        !isMax &&
         amount > +props.selectedMarketDetails.borrowBalanceInTokenUnit
       ) {
         setRepayValidationMessage("Amount must be <= protocol balance");
@@ -1717,8 +1751,7 @@ function Dashboard() {
                     <ListItemText secondary={`Protocol Balance`} />
                     <ListItemSecondaryAction
                       style={{ margin: "0px 15px 0px 0px" }}
-                    >{`${roundToDecimalPlaces(
-                      props.selectedMarketDetails.borrowBalanceInTokenUnit,
+                    >{`${props.selectedMarketDetails.borrowBalanceInTokenUnit.decimalPlaces(
                       4
                     )} ${
                       props.selectedMarketDetails.symbol
@@ -1734,22 +1767,29 @@ function Dashboard() {
                   label={props.selectedMarketDetails.symbol}
                   value={repayAmount}
                   onChange={(event) => {
-                    handleRepayAmountChange(event.target.value);
+                    setIsRepayMax(false);
+                    handleRepayAmountChange(event.target.value, false);
                   }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment
                         position="end"
                         onClick={() => {
+                          const isMax = true;
+                          setIsRepayMax(isMax);
                           handleRepayAmountChange(
                             BigNumber.minimum(
                               getMaxAmount(
                                 props.selectedMarketDetails.symbol,
                                 props.selectedMarketDetails.walletBalance
                               ),
-                              props.selectedMarketDetails
-                                .borrowBalanceInTokenUnit
-                            ).toString()
+                              getMaxRepayAmount(
+                                props.selectedMarketDetails.symbol,
+                                props.selectedMarketDetails
+                                  .borrowBalanceInTokenUnit
+                              )
+                            ).toString(),
+                            isMax
                           );
                         }}
                       >
@@ -1789,9 +1829,11 @@ function Dashboard() {
                         block
                         onClick={() => {
                           handleRepay(
+                            account,
                             props.selectedMarketDetails.underlyingAddress,
                             props.selectedMarketDetails.pTokenAddress,
                             repayAmount,
+                            isRepayMax,
                             props.selectedMarketDetails.decimals,
                             setTxSnackbarMessage,
                             setTxSnackbarOpen,
@@ -1825,10 +1867,9 @@ function Dashboard() {
                     <ListItemText secondary={`Wallet Balance`} />
                     <ListItemSecondaryAction
                       style={{ margin: "0px 15px 0px 0px" }}
-                    >{`${roundToDecimalPlaces(
-                      props.selectedMarketDetails.walletBalance,
-                      4
-                    )} ${
+                    >{`${props.selectedMarketDetails.walletBalance
+                      .decimalPlaces(4)
+                      .toString()} ${
                       props.selectedMarketDetails.symbol
                     }`}</ListItemSecondaryAction>
                   </ListItem>
