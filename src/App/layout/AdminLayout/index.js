@@ -264,6 +264,9 @@ function AdminLayout() {
               <Nav className="mr-auto"></Nav>
               <Nav className="mr-true">
                 <Nav.Link href="https://percent.finance">Rewards</Nav.Link>
+                <Nav.Link href="https://gov.percent.finance/">
+                  Governance
+                </Nav.Link>
                 <Nav.Link href="https://twitter.com/PercentFinance">
                   Twitter
                 </Nav.Link>
