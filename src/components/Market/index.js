@@ -2040,23 +2040,13 @@ function Dashboard() {
           margin: "0px 0px 8px 0px",
         }}
       />
-      <Alert severity="warning" style={{ margin: "0px 0px 15px 0px" }}>
-        <h6>
-          IMPORTANT: Please understand the contract admin risk before using
-          Percent Money Market
-        </h6>
-        <p>
-          In order to further eliminate the possibility of rug pull, the admin
-          of all pTokens are now being transferred to a timelock contract and
-          the transfer is expected to be completed on Oct 5th at ~5AM (It
-          requires 48 hour to complete).
-        </p>
-        <p>
-          Until the admin is transferred, please understand the risk before
-          using Percent Money Market!
-        </p>
+      <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
+        <span>
+          Admin control of all pToken contracts have been transferred to the
+          timelock contract to eliminate the possibility of rug pull.
+        </span>{" "}
         <a
-          href="https://twitter.com/PercentFinance/status/1312266570807169024?s=20"
+          href="https://twitter.com/PercentFinance/status/1312981782791245824?s=20"
           target="_blank"
           rel="noopener noreferrer"
         >
