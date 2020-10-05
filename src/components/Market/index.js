@@ -2043,7 +2043,7 @@ function Dashboard() {
       <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
         <span>
           Admin control of all pToken contracts have been transferred to the
-          timelock contract to eliminate the possibility of rug pull.
+          timelock contract.
         </span>{" "}
         <a
           href="https://twitter.com/PercentFinance/status/1312981782791245824?s=20"
