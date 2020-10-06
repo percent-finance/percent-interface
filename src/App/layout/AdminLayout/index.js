@@ -263,7 +263,9 @@ function AdminLayout() {
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="mr-auto"></Nav>
               <Nav className="mr-true">
-                <Nav.Link href="https://percent.finance">Rewards</Nav.Link>
+                <Nav.Link href="https://rewards.percent.finance">
+                  Rewards
+                </Nav.Link>
                 <Nav.Link href="https://gov.percent.finance/">
                   Governance
                 </Nav.Link>
