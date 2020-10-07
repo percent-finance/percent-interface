@@ -269,6 +269,9 @@ function AdminLayout() {
                 <Nav.Link href="https://gov.percent.finance/">
                   Governance
                 </Nav.Link>
+                <Nav.Link href="https://github.com/percent-finance">
+                  GitHub
+                </Nav.Link>
                 <Nav.Link href="https://twitter.com/PercentFinance">
                   Twitter
                 </Nav.Link>
