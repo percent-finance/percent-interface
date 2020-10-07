@@ -266,19 +266,41 @@ function AdminLayout() {
                 <Nav.Link href="https://rewards.percent.finance">
                   Rewards
                 </Nav.Link>
-                <Nav.Link href="https://gov.percent.finance/">
+                <Nav.Link
+                  href="https://gov.percent.finance/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Governance
                 </Nav.Link>
-                <Nav.Link href="https://github.com/percent-finance">
+                <Nav.Link
+                  href="https://github.com/percent-finance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   GitHub
                 </Nav.Link>
-                <Nav.Link href="https://twitter.com/PercentFinance">
+                <Nav.Link
+                  href="https://twitter.com/PercentFinance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Twitter
                 </Nav.Link>
-                <Nav.Link href="https://medium.com/percent-finance">
+                <Nav.Link
+                  href="https://medium.com/percent-finance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Medium
                 </Nav.Link>
-                <Nav.Link href="https://discord.gg/3sxWhH3">Discord</Nav.Link>
+                <Nav.Link
+                  href="https://discord.gg/3sxWhH3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Discord
+                </Nav.Link>
               </Nav>
               <Nav style={{ margin: "0px 40px 0px 0px" }}></Nav>
               <PctButton />
