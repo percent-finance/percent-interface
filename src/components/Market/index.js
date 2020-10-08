@@ -2040,18 +2040,12 @@ function Dashboard() {
           margin: "0px 0px 8px 0px",
         }}
       />
-      <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
+      <Alert severity="warning" style={{ margin: "0px 0px 15px 0px" }}>
         <span>
-          Admin control of all pToken contracts have been transferred to the
-          timelock contract.
-        </span>{" "}
-        <a
-          href="https://twitter.com/PercentFinance/status/1312981782791245824?s=20"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Twitter Announcement
-        </a>
+          We are aware that some users may not be able to collect their PCT
+          rewards. Please be reassured that everyone will get back what they
+          should have. We are working on a solution for it.
+        </span>
       </Alert>
       {/* <WarningDialog /> */}
       <SupplyDialog
