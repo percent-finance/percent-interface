@@ -120,8 +120,9 @@ function AdminLayout() {
               onClick={() => {
                 claimPct(account);
               }}
+              disabled
             >
-              Collect
+              Collect (Collection will resume after 10th Oct, ~2PM)
             </Button>
           </Dropdown.Item>
         </Dropdown.Menu>
