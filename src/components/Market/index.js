@@ -779,7 +779,7 @@ function Dashboard() {
     underlyingAddress,
     pTokenAddress,
     amount,
-    isRepayMax,
+    isFullRepay,
     decimals,
     setTxSnackbarMessage,
     setTxSnackbarOpen,
@@ -817,7 +817,7 @@ function Dashboard() {
           options // [optional] call options, provider, network, ethers.js "overrides"
         );
       } else {
-        if (isRepayMax) {
+        if (isFullRepay) {
           parameters.push(
             "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
           ); //-1 (i.e. 2256 - 1)
@@ -916,11 +916,12 @@ function Dashboard() {
     }
   };
 
-  const getMaxRepayAmount = (symbol, borrowBalanceInTokenUnit) => {
+  const getMaxRepayAmount = (symbol, borrowBalanceInTokenUnit, borrowApy) => {
+    const maxRepayFactor = new BigNumber(1).plus(borrowApy / 100 / 100); // e.g. Borrow APY = 2% => maxRepayFactor = 1.0002
     if (symbol === "ETH") {
-      return borrowBalanceInTokenUnit.times(1.001).decimalPlaces(18); // Setting it to a bit larger, this makes sure the user can repay 100%.
+      return borrowBalanceInTokenUnit.times(maxRepayFactor).decimalPlaces(18); // Setting it to a bit larger, this makes sure the user can repay 100%.
     } else {
-      return borrowBalanceInTokenUnit.times(1.001).decimalPlaces(18); // The same as ETH for now. The transaction will use -1 anyway.
+      return borrowBalanceInTokenUnit.times(maxRepayFactor).decimalPlaces(18); // The same as ETH for now. The transaction will use -1 anyway.
     }
   };
 
@@ -1608,7 +1609,7 @@ function Dashboard() {
     const [tabValue, setTabValue] = useState(0);
     const [borrowAmount, setBorrowAmount] = useState("");
     const [repayAmount, setRepayAmount] = useState("");
-    const [isRepayMax, setIsRepayMax] = useState(false);
+    const [isFullRepay, setIsFullRepay] = useState(false);
     const [borrowValidationMessage, setBorrowValidationMessage] = useState("");
     const [repayValidationMessage, setRepayValidationMessage] = useState("");
     const [txSnackbarOpen, setTxSnackbarOpen] = useState(false);
@@ -1633,13 +1634,13 @@ function Dashboard() {
         setBorrowValidationMessage("");
       }
     };
-    const handleRepayAmountChange = (amount, isMax) => {
+    const handleRepayAmountChange = (amount, isFull) => {
       setRepayAmount(amount);
 
       if (amount <= 0) {
         setRepayValidationMessage("Amount must be > 0");
       } else if (
-        !isMax &&
+        !isFull &&
         amount > +props.selectedMarketDetails.borrowBalanceInTokenUnit
       ) {
         setRepayValidationMessage("Amount must be <= protocol balance");
@@ -1767,7 +1768,7 @@ function Dashboard() {
                   label={props.selectedMarketDetails.symbol}
                   value={repayAmount}
                   onChange={(event) => {
-                    setIsRepayMax(false);
+                    setIsFullRepay(false);
                     handleRepayAmountChange(event.target.value, false);
                   }}
                   InputProps={{
@@ -1775,21 +1776,24 @@ function Dashboard() {
                       <InputAdornment
                         position="end"
                         onClick={() => {
-                          const isMax = true;
-                          setIsRepayMax(isMax);
+                          const maxAffortable = getMaxAmount(
+                            props.selectedMarketDetails.symbol,
+                            props.selectedMarketDetails.walletBalance
+                          );
+                          const fullRepayAmount = getMaxRepayAmount(
+                            props.selectedMarketDetails.symbol,
+                            props.selectedMarketDetails
+                              .borrowBalanceInTokenUnit,
+                            props.selectedMarketDetails.borrowApy
+                          );
+                          const isFull = maxAffortable.gte(fullRepayAmount);
+                          setIsFullRepay(isFull);
                           handleRepayAmountChange(
                             BigNumber.minimum(
-                              getMaxAmount(
-                                props.selectedMarketDetails.symbol,
-                                props.selectedMarketDetails.walletBalance
-                              ),
-                              getMaxRepayAmount(
-                                props.selectedMarketDetails.symbol,
-                                props.selectedMarketDetails
-                                  .borrowBalanceInTokenUnit
-                              )
+                              maxAffortable,
+                              fullRepayAmount
                             ).toString(),
-                            isMax
+                            isFull
                           );
                         }}
                       >
@@ -1833,7 +1837,7 @@ function Dashboard() {
                             props.selectedMarketDetails.underlyingAddress,
                             props.selectedMarketDetails.pTokenAddress,
                             repayAmount,
-                            isRepayMax,
+                            isFullRepay,
                             props.selectedMarketDetails.decimals,
                             setTxSnackbarMessage,
                             setTxSnackbarOpen,
