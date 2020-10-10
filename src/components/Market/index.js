@@ -2044,20 +2044,8 @@ function Dashboard() {
           margin: "0px 0px 8px 0px",
         }}
       />
-      <Alert severity="warning" style={{ margin: "0px 0px 15px 0px" }}>
-        <span>
-          We are aware that some users may not be able to collect rewards from
-          the money market. We have already sent a timelock transaction to
-          inject the extra PCT required to the contract, users will be able to
-          collect rewards after 10th Oct, ~2PM.
-        </span>{" "}
-        <a
-          href="https://twitter.com/PercentFinance/status/1314398541670883328?s=20"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Twitter Announcement
-        </a>
+      <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
+        <span>PCT rewards collection has resumed normal.</span>
       </Alert>
       {/* <WarningDialog /> */}
       <SupplyDialog
