@@ -22,7 +22,7 @@ import Snackbar from "@material-ui/core/Snackbar";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
 import * as colors from "@material-ui/core/colors";
-import Alert from "@material-ui/lab/Alert";
+// import Alert from "@material-ui/lab/Alert";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
 import {
@@ -188,6 +188,11 @@ function Dashboard() {
             supplyAndBorrowBalance?.borrowBalance
           );
 
+          const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
+            pTokenAddress,
+            decimals
+          );
+
           const isEnterMarket = enteredMarkets.includes(pTokenAddress);
 
           const collateralFactor = await getCollateralFactor(
@@ -240,9 +245,10 @@ function Dashboard() {
             borrowBalanceInTokenUnit:
               supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
             borrowBalance: supplyAndBorrowBalance?.borrowBalance,
-            marketTotalBorrow: (
-              await getMarketTotalBorrowInTokenUnit(pTokenAddress, decimals)
-            )?.times(underlyingPrice),
+            marketTotalBorrowInTokenUnit,
+            marketTotalBorrow: marketTotalBorrowInTokenUnit?.times(
+              underlyingPrice
+            ),
             isEnterMarket,
             underlyingAmount,
             underlyingPrice,
@@ -1283,6 +1289,41 @@ function Dashboard() {
     );
   };
 
+  const DialogMarketInfoSection = (props) => {
+    return (
+      <div>
+        <ListSubheader style={{ fontSize: "80%", fontWeight: "bold" }}>
+          Market Info
+        </ListSubheader>
+        <ListItem>
+          <ListItemText secondary={`Collateral Factor`} />
+          <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
+            <span>
+              {`${props.selectedMarketDetails.collateralFactor
+                ?.times(100)
+                .toFixed(0)}%`}
+            </span>
+          </ListItemSecondaryAction>
+        </ListItem>
+        <ListItem>
+          <ListItemText secondary={`Utilisation Rate`} />
+          <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
+            <span>
+              {`${props.selectedMarketDetails.marketTotalBorrowInTokenUnit
+                ?.div(
+                  props.selectedMarketDetails.marketTotalBorrowInTokenUnit.plus(
+                    props.selectedMarketDetails.underlyingAmount
+                  )
+                )
+                .times(100)
+                .toFixed(2)}%`}
+            </span>
+          </ListItemSecondaryAction>
+        </ListItem>
+      </div>
+    );
+  };
+
   // const WarningDialog = (props) => {
   //   return (
   //     <Dialog
@@ -1450,6 +1491,11 @@ function Dashboard() {
                     newBorrowLimit={newBorrowLimit1}
                   />
                   <br />
+                  <DialogMarketInfoSection
+                    generalDetails={props.generalDetails}
+                    selectedMarketDetails={props.selectedMarketDetails}
+                  />
+                  <br />
                   <br />
                   <ListItem>
                     {props.selectedMarketDetails.underlyingAllowance?.isGreaterThan(
@@ -1550,6 +1596,11 @@ function Dashboard() {
                   <DialogBorrowLimitSection
                     generalDetails={props.generalDetails}
                     newBorrowLimit={newBorrowLimit2}
+                  />
+                  <br />
+                  <DialogMarketInfoSection
+                    generalDetails={props.generalDetails}
+                    selectedMarketDetails={props.selectedMarketDetails}
                   />
                   <br />
                   <br />
@@ -1724,6 +1775,11 @@ function Dashboard() {
                     repayAmount={0}
                   />
                   <br />
+                  <DialogMarketInfoSection
+                    generalDetails={props.generalDetails}
+                    selectedMarketDetails={props.selectedMarketDetails}
+                  />
+                  <br />
                   <br />
                   <ListItem>
                     <Button
@@ -1816,6 +1872,11 @@ function Dashboard() {
                     selectedMarketDetails={props.selectedMarketDetails}
                     borrowAmount={0}
                     repayAmount={repayAmount}
+                  />
+                  <br />
+                  <DialogMarketInfoSection
+                    generalDetails={props.generalDetails}
+                    selectedMarketDetails={props.selectedMarketDetails}
                   />
                   <br />
                   <br />
@@ -2044,9 +2105,9 @@ function Dashboard() {
           margin: "0px 0px 8px 0px",
         }}
       />
-      <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
+      {/* <Alert severity="success" style={{ margin: "0px 0px 15px 0px" }}>
         <span>PCT rewards collection has resumed normal.</span>
-      </Alert>
+      </Alert> */}
       {/* <WarningDialog /> */}
       <SupplyDialog
         open={supplyDialogOpen}
