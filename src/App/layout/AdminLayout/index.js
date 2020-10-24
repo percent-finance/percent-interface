@@ -245,7 +245,7 @@ function AdminLayout() {
           boxShadow: "0px 2px 5px 2px #eee",
         }}
       >
-        <Col xs={12} xl={9}>
+        <Col xs={12} xl={11}>
           <Navbar bg="transparent" expand="lg">
             <Link to="/">
               <Navbar.Brand style={{ background: "transparent" }}>
@@ -313,7 +313,7 @@ function AdminLayout() {
         className="justify-content-md-center"
         style={{ margin: "0px 3px 100px 3px" }}
       >
-        <Col xs={12} xl={9}>
+        <Col xs={12} xl={11}>
           {menu}
         </Col>
       </Row>

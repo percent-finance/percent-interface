@@ -21,7 +21,9 @@ import Typography from "@material-ui/core/Typography";
 import Snackbar from "@material-ui/core/Snackbar";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
+// import InfoIcon from "@material-ui/icons/Info";
 import * as colors from "@material-ui/core/colors";
+// import Tooltip from "@material-ui/core/Tooltip";
 // import Alert from "@material-ui/lab/Alert";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
@@ -138,15 +140,26 @@ function Dashboard() {
     //   setOtherSnackbarOpen(true);
     // }
 
-    const allMarkets = await Compound.eth.read(
-      comptrollerAddress,
-      "function getAllMarkets() returns (address[])",
-      [], // [optional] parameters
-      {
-        network: chainIdToName[parseInt(library?.provider?.chainId)],
-        _compoundProvider: library,
-      } // [optional] call options, provider, network, ethers.js "overrides"
-    );
+    // const allMarkets = await Compound.eth.read(
+    //   comptrollerAddress,
+    //   "function getAllMarkets() returns (address[])",
+    //   [], // [optional] parameters
+    //   {
+    //     network: chainIdToName[parseInt(library?.provider?.chainId)],
+    //     _compoundProvider: library,
+    //   } // [optional] call options, provider, network, ethers.js "overrides"
+    // );
+
+    const allMarkets = [
+      "0x7b4a7FD41c688A7CB116534E341e44126eF5a0fd",
+      "0x0f69f08f872F366AD8EDdE03DAE8812619A17536",
+      "0x2404987433ff32e32c5b0F8Fb77A74a5BcA44aCb",
+      "0xa446d7789f2c1daeE6b9377aDD622A8dFe3c95Ba",
+      "0xA5AeA6Ca2c82a058F4c495b5fB46bE4B045cCa95",
+      "0xc62eDC15021D1dC411Ca07b3e48eA7C57bB3B682",
+      "0x1890f366B08eBd23320758B741B5aA1359eF6F22",
+      "0xE2a41a9F32fbF1FDe95Ba2b40A24dc7384c41Fd4",
+    ];
 
     if (account) {
       const enteredMarkets = await Compound.eth.read(
@@ -944,6 +957,32 @@ function Dashboard() {
     track: {},
   })(Switch);
 
+  // const LightTooltip = withStyles((theme) => ({
+  //   tooltip: {
+  //     backgroundColor: theme.palette.common.white,
+  //     color: "rgba(0, 0, 0, 0.87)",
+  //     boxShadow: theme.shadows[1],
+  //     fontSize: 11,
+  //   },
+  // }))(Tooltip);
+
+  // const GreyInfoIcon = (props) => {
+  //   return (
+  //     <InfoIcon
+  //       style={{
+  //         color: colors.grey[300],
+  //         fontSize: 18,
+  //         margin: "0px 0px 0px 5px",
+  //         ...props.style,
+  //       }}
+  //     />
+  //   );
+  // };
+
+  const LightTooltip = () => <div></div>;
+
+  const GreyInfoIcon = () => <div></div>;
+
   const SupplyMarketRow = (props) => {
     return (
       <tr
@@ -1032,12 +1071,19 @@ function Dashboard() {
         </td>
         <td>
           <h6 className="text-muted">
+            {convertToLargeNumberRepresentation(
+              props.details.marketTotalBorrowInTokenUnit.precision(2)
+            )}
+          </h6>
+        </td>
+        <td>
+          <h6 className="text-muted">
             {props.details.walletBalance.decimalPlaces(4).toString()}
           </h6>
         </td>
         <td>
           <h6 className="text-muted">{`$${convertToLargeNumberRepresentation(
-            new BigNumber(props.details.liquidity).precision(4)
+            new BigNumber(props.details.liquidity).precision(2)
           )}`}</h6>
         </td>
       </tr>
@@ -1077,7 +1123,12 @@ function Dashboard() {
             src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
             alt=""
           />
-          <ListItemText secondary={`Supply APY`} />
+          <LightTooltip title="Add">
+            <div style={{ display: "flex" }}>
+              <ListItemText secondary={`Supply APY`} />
+              <GreyInfoIcon style={{ margin: "5px 0px 0px 5px" }} />
+            </div>
+          </LightTooltip>
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${props.selectedMarketDetails.supplyApy?.toFixed(
@@ -1296,7 +1347,7 @@ function Dashboard() {
           Market Info
         </ListSubheader>
         <ListItem>
-          <ListItemText secondary={`Collateral Factor`} />
+          <ListItemText secondary={props.collateralFactorText} />
           <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
             <span>
               {`${props.selectedMarketDetails.collateralFactor
@@ -1402,7 +1453,7 @@ function Dashboard() {
       } else if (
         amount > +props.selectedMarketDetails.supplyBalanceInTokenUnit
       ) {
-        setWithdrawValidationMessage("Amount must be <= protocol balance");
+        setWithdrawValidationMessage("Amount must be <= your supply balance");
       } else if (amount > +props.selectedMarketDetails.underlyingAmount) {
         setWithdrawValidationMessage("Amount must be <= liquidity");
       } else {
@@ -1494,6 +1545,7 @@ function Dashboard() {
                   <DialogMarketInfoSection
                     generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
+                    collateralFactorText={"Collateral Factor"}
                   />
                   <br />
                   <br />
@@ -1538,7 +1590,7 @@ function Dashboard() {
                           );
                         }}
                       >
-                        Enable
+                        Access To Wallet
                       </Button>
                     )}
                   </ListItem>
@@ -1601,6 +1653,7 @@ function Dashboard() {
                   <DialogMarketInfoSection
                     generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
+                    collateralFactorText={"Collateral Factor"}
                   />
                   <br />
                   <br />
@@ -1628,7 +1681,7 @@ function Dashboard() {
                 </List>
                 <List>
                   <ListItem>
-                    <ListItemText secondary={`Protocol Balance`} />
+                    <ListItemText secondary={`You Supplied`} />
                     <ListItemSecondaryAction
                       style={{ margin: "0px 15px 0px 0px" }}
                     >{`${props.selectedMarketDetails.supplyBalanceInTokenUnit.decimalPlaces(
@@ -1694,7 +1747,7 @@ function Dashboard() {
         !isFull &&
         amount > +props.selectedMarketDetails.borrowBalanceInTokenUnit
       ) {
-        setRepayValidationMessage("Amount must be <= protocol balance");
+        setRepayValidationMessage("Amount must be <= your borrow balance");
       } else if (amount > +props.selectedMarketDetails.walletBalance) {
         setRepayValidationMessage("Amount must be <= balance");
       } else {
@@ -1778,6 +1831,7 @@ function Dashboard() {
                   <DialogMarketInfoSection
                     generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
+                    collateralFactorText={"Liquidation Threshold"}
                   />
                   <br />
                   <br />
@@ -1805,7 +1859,7 @@ function Dashboard() {
                 </List>
                 <List>
                   <ListItem>
-                    <ListItemText secondary={`Protocol Balance`} />
+                    <ListItemText secondary={`You Borrowed`} />
                     <ListItemSecondaryAction
                       style={{ margin: "0px 15px 0px 0px" }}
                     >{`${props.selectedMarketDetails.borrowBalanceInTokenUnit.decimalPlaces(
@@ -1877,6 +1931,7 @@ function Dashboard() {
                   <DialogMarketInfoSection
                     generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
+                    collateralFactorText={"Liquidation Threshold"}
                   />
                   <br />
                   <br />
@@ -1922,7 +1977,7 @@ function Dashboard() {
                           );
                         }}
                       >
-                        Enable
+                        Access To Wallet
                       </Button>
                     )}
                   </ListItem>
@@ -2152,7 +2207,14 @@ function Dashboard() {
               </div>
             </Col>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Net APY</h6>
+              <h6 className="mb-4">
+                <LightTooltip title="Add" placement="bottom-start">
+                  <div>
+                    Net APY
+                    <GreyInfoIcon />
+                  </div>
+                </LightTooltip>
+              </h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
@@ -2166,7 +2228,7 @@ function Dashboard() {
               </div>
             </Col>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Borrow Balance</h6>
+              <h6 className="mb-4">Your Borrow Balance</h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
@@ -2180,7 +2242,7 @@ function Dashboard() {
               </div>
             </Col>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Borrow Limit</h6>
+              <h6 className="mb-4">Your Borrow Limit</h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
@@ -2313,7 +2375,7 @@ function Dashboard() {
         </Col>
       </Row> */}
       <Row>
-        <Col xs={12} lg={6}>
+        <Col xs={12} xl={6}>
           <Card className="Recent-Users">
             <Card.Header style={{ borderBottom: "none" }}>
               <Card.Title as="h5">Supply Markets</Card.Title>
@@ -2324,10 +2386,17 @@ function Dashboard() {
                   <tr>
                     <th>Asset</th>
                     <th></th>
-                    <th>APY</th>
-                    <th>Supplied</th>
+                    <th>
+                      <LightTooltip title="Add">
+                        <div>
+                          APY
+                          <GreyInfoIcon />
+                        </div>
+                      </LightTooltip>
+                    </th>
+                    <th>You Supplied</th>
                     <th>Wallet</th>
-                    <th>Collateral</th>
+                    <th>Use As Collateral</th>
                   </tr>
                   {generalDetails.totalSupplyBalance?.toNumber() > 0 && (
                     <tr>
@@ -2382,7 +2451,7 @@ function Dashboard() {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} lg={6}>
+        <Col xs={12} xl={6}>
           <Card className="Recent-Users">
             <Card.Header style={{ borderBottom: "none" }}>
               <Card.Title as="h5">Borrow Markets</Card.Title>
@@ -2394,7 +2463,8 @@ function Dashboard() {
                     <th>Asset</th>
                     <th></th>
                     <th>APY</th>
-                    <th>Borrowed</th>
+                    <th>You Borrowed</th>
+                    <th>Total Borrowed</th>
                     <th>Wallet</th>
                     <th>Liquidity</th>
                   </tr>
@@ -2409,6 +2479,7 @@ function Dashboard() {
                       >
                         Borrowing
                       </td>
+                      <td></td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -2433,6 +2504,7 @@ function Dashboard() {
                       >
                         Other Markets
                       </td>
+                      <td></td>
                       <td></td>
                       <td></td>
                       <td></td>
