@@ -21,9 +21,9 @@ import Typography from "@material-ui/core/Typography";
 import Snackbar from "@material-ui/core/Snackbar";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
-// import InfoIcon from "@material-ui/icons/Info";
+import InfoIcon from "@material-ui/icons/Info";
+import Tooltip from "@material-ui/core/Tooltip";
 import * as colors from "@material-ui/core/colors";
-// import Tooltip from "@material-ui/core/Tooltip";
 // import Alert from "@material-ui/lab/Alert";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
@@ -957,31 +957,27 @@ function Dashboard() {
     track: {},
   })(Switch);
 
-  // const LightTooltip = withStyles((theme) => ({
-  //   tooltip: {
-  //     backgroundColor: theme.palette.common.white,
-  //     color: "rgba(0, 0, 0, 0.87)",
-  //     boxShadow: theme.shadows[1],
-  //     fontSize: 11,
-  //   },
-  // }))(Tooltip);
+  const LightTooltip = withStyles((theme) => ({
+    tooltip: {
+      backgroundColor: theme.palette.common.white,
+      color: "rgba(0, 0, 0, 0.87)",
+      boxShadow: theme.shadows[1],
+      fontSize: 11,
+    },
+  }))(Tooltip);
 
-  // const GreyInfoIcon = (props) => {
-  //   return (
-  //     <InfoIcon
-  //       style={{
-  //         color: colors.grey[300],
-  //         fontSize: 18,
-  //         margin: "0px 0px 0px 5px",
-  //         ...props.style,
-  //       }}
-  //     />
-  //   );
-  // };
-
-  const LightTooltip = () => <div></div>;
-
-  const GreyInfoIcon = () => <div></div>;
+  const GreyInfoIcon = (props) => {
+    return (
+      <InfoIcon
+        style={{
+          color: colors.grey[300],
+          fontSize: 18,
+          margin: "0px 0px 0px 5px",
+          ...props.style,
+        }}
+      />
+    );
+  };
 
   const SupplyMarketRow = (props) => {
     return (
@@ -1123,12 +1119,7 @@ function Dashboard() {
             src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
             alt=""
           />
-          <LightTooltip title="Add">
-            <div style={{ display: "flex" }}>
-              <ListItemText secondary={`Supply APY`} />
-              <GreyInfoIcon style={{ margin: "5px 0px 0px 5px" }} />
-            </div>
-          </LightTooltip>
+          <ListItemText secondary={`Supply APY`} />
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${props.selectedMarketDetails.supplyApy?.toFixed(
@@ -1347,7 +1338,18 @@ function Dashboard() {
           Market Info
         </ListSubheader>
         <ListItem>
-          <ListItemText secondary={props.collateralFactorText} />
+          <LightTooltip
+            title={
+              props.collateralFactorText === "Loan-to-Value"
+                ? "The maximum amount of borrowing in % of the collateral value of the provided token."
+                : "The point at which the protocol deems a borrowing position to be undercollateralized and subject to liquidation."
+            }
+          >
+            <div style={{ display: "flex" }}>
+              <ListItemText secondary={props.collateralFactorText} />
+              <GreyInfoIcon style={{ margin: "5px 0px 0px 5px" }} />
+            </div>
+          </LightTooltip>
           <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
             <span>
               {`${props.selectedMarketDetails.collateralFactor
@@ -1357,7 +1359,12 @@ function Dashboard() {
           </ListItemSecondaryAction>
         </ListItem>
         <ListItem>
-          <ListItemText secondary={`Utilisation Rate`} />
+          <LightTooltip title="The amount of token supply in % of the total that is currently being lent out.">
+            <div style={{ display: "flex" }}>
+              <ListItemText secondary={`% of Supply Borrowed`} />
+              <GreyInfoIcon style={{ margin: "5px 0px 0px 5px" }} />
+            </div>
+          </LightTooltip>
           <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
             <span>
               {`${props.selectedMarketDetails.marketTotalBorrowInTokenUnit
@@ -1545,7 +1552,7 @@ function Dashboard() {
                   <DialogMarketInfoSection
                     generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
-                    collateralFactorText={"Collateral Factor"}
+                    collateralFactorText={"Loan-to-Value"}
                   />
                   <br />
                   <br />
@@ -1653,7 +1660,7 @@ function Dashboard() {
                   <DialogMarketInfoSection
                     generalDetails={props.generalDetails}
                     selectedMarketDetails={props.selectedMarketDetails}
-                    collateralFactorText={"Collateral Factor"}
+                    collateralFactorText={"Loan-to-Value"}
                   />
                   <br />
                   <br />
@@ -2193,7 +2200,7 @@ function Dashboard() {
         <Card.Body style={{ padding: "20px 20px 0px 20px" }}>
           <Row>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Supply Balance</h6>
+              <h6 className="mb-4">Your Supply Balance</h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
@@ -2208,7 +2215,10 @@ function Dashboard() {
             </Col>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
               <h6 className="mb-4">
-                <LightTooltip title="Add" placement="bottom-start">
+                <LightTooltip
+                  title="The net annual percentage yield across all of your personal deposits/borrows."
+                  placement="bottom-start"
+                >
                   <div>
                     Net APY
                     <GreyInfoIcon />
@@ -2228,7 +2238,17 @@ function Dashboard() {
               </div>
             </Col>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Your Borrow Balance</h6>
+              <h6 className="mb-4">
+                <LightTooltip
+                  title="The balance of outstanding value you borrowed from the protocol."
+                  placement="bottom-start"
+                >
+                  <div>
+                    Your Borrow Balance
+                    <GreyInfoIcon />
+                  </div>
+                </LightTooltip>
+              </h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
@@ -2242,7 +2262,17 @@ function Dashboard() {
               </div>
             </Col>
             <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Your Borrow Limit</h6>
+              <h6 className="mb-4">
+                <LightTooltip
+                  title="The maximum amount of value available for you to borrow."
+                  placement="bottom-start"
+                >
+                  <div>
+                    Your Borrow Limit
+                    <GreyInfoIcon />
+                  </div>
+                </LightTooltip>
+              </h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
@@ -2387,7 +2417,7 @@ function Dashboard() {
                     <th>Asset</th>
                     <th></th>
                     <th>
-                      <LightTooltip title="Add">
+                      <LightTooltip title="Annual percentage yield of the asset. APY constantly changes to reflect market conditions.">
                         <div>
                           APY
                           <GreyInfoIcon />
@@ -2396,7 +2426,14 @@ function Dashboard() {
                     </th>
                     <th>You Supplied</th>
                     <th>Wallet</th>
-                    <th>Use As Collateral</th>
+                    <th>
+                      <LightTooltip title="By selecting this option you enable your deposited tokens to be used as collateral for borrowing.">
+                        <div>
+                          Use As Collateral
+                          <GreyInfoIcon />
+                        </div>
+                      </LightTooltip>
+                    </th>
                   </tr>
                   {generalDetails.totalSupplyBalance?.toNumber() > 0 && (
                     <tr>
@@ -2466,7 +2503,14 @@ function Dashboard() {
                     <th>You Borrowed</th>
                     <th>Total Borrowed</th>
                     <th>Wallet</th>
-                    <th>Liquidity</th>
+                    <th>
+                      <LightTooltip title="Total supply of a specific token in the money market.">
+                        <div>
+                          Liquidity
+                          <GreyInfoIcon />
+                        </div>
+                      </LightTooltip>
+                    </th>
                   </tr>
                   {generalDetails.totalBorrowBalance?.toNumber() > 0 && (
                     <tr>
