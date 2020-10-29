@@ -55,6 +55,7 @@ function Dashboard() {
   const [selectedMarketDetails, setSelectedMarketDetails] = useState({});
   const [allMarketDetails, setAllMarketDetails] = useState([]);
   const [generalDetails, setGeneralDetails] = useState([]);
+  const blockTime = 13.5; // seconds
   const gasLimit = "250000";
   const gasLimitSupplyDai = "535024";
   const gasLimitSupplySnx = "450000";
@@ -351,7 +352,7 @@ function Dashboard() {
   const getSupplyApy = async (address) => {
     if (library) {
       const mantissa = 1e18; // mantissa is the same even the underlying asset has different decimals
-      const blocksPerDay = 4 * 60 * 24;
+      const blocksPerDay = (24 * 60 * 60) / blockTime;
       const daysPerYear = 365;
 
       let supplyRatePerBlock;
@@ -383,7 +384,7 @@ function Dashboard() {
   const getBorrowApy = async (address) => {
     if (library) {
       const mantissa = 1e18; // mantissa is the same even the underlying asset has different decimals
-      const blocksPerDay = 4 * 60 * 24;
+      const blocksPerDay = (24 * 60 * 60) / blockTime;
       const daysPerYear = 365;
 
       let borrowRatePerBlock;
@@ -1137,7 +1138,7 @@ function Dashboard() {
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${zeroStringIfNullish(
             props.selectedMarketDetails.pctSpeed
-              ?.times(4 * 60 * 24 * 365 * 100)
+              ?.times(((24 * 60 * 60) / blockTime) * 365 * 100)
               .times(props.generalDetails.pctPrice)
               .div(props.selectedMarketDetails.marketTotalSupply)
               .toFixed(2),
@@ -1235,7 +1236,7 @@ function Dashboard() {
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${zeroStringIfNullish(
             props.selectedMarketDetails.pctSpeed
-              ?.times(4 * 60 * 24 * 365 * 100)
+              ?.times(((24 * 60 * 60) / blockTime) * 365 * 100)
               .times(props.generalDetails.pctPrice)
               .div(props.selectedMarketDetails.marketTotalBorrow)
               .toFixed(2),
