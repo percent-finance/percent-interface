@@ -140,26 +140,15 @@ function Dashboard() {
     //   setOtherSnackbarOpen(true);
     // }
 
-    // const allMarkets = await Compound.eth.read(
-    //   comptrollerAddress,
-    //   "function getAllMarkets() returns (address[])",
-    //   [], // [optional] parameters
-    //   {
-    //     network: chainIdToName[parseInt(library?.provider?.chainId)],
-    //     _compoundProvider: library,
-    //   } // [optional] call options, provider, network, ethers.js "overrides"
-    // );
-
-    const allMarkets = [
-      "0x7b4a7FD41c688A7CB116534E341e44126eF5a0fd",
-      "0x0f69f08f872F366AD8EDdE03DAE8812619A17536",
-      "0x2404987433ff32e32c5b0F8Fb77A74a5BcA44aCb",
-      "0xa446d7789f2c1daeE6b9377aDD622A8dFe3c95Ba",
-      "0xA5AeA6Ca2c82a058F4c495b5fB46bE4B045cCa95",
-      "0xc62eDC15021D1dC411Ca07b3e48eA7C57bB3B682",
-      "0x1890f366B08eBd23320758B741B5aA1359eF6F22",
-      "0xE2a41a9F32fbF1FDe95Ba2b40A24dc7384c41Fd4",
-    ];
+    const allMarkets = await Compound.eth.read(
+      comptrollerAddress,
+      "function getAllMarkets() returns (address[])",
+      [], // [optional] parameters
+      {
+        network: chainIdToName[parseInt(library?.provider?.chainId)],
+        _compoundProvider: library,
+      } // [optional] call options, provider, network, ethers.js "overrides"
+    );
 
     if (account) {
       const enteredMarkets = await Compound.eth.read(
@@ -183,6 +172,11 @@ function Dashboard() {
           const underlyingAddress = await getUnderlyingTokenAddress(
             pTokenAddress
           );
+          const symbol = await getTokenSymbol(underlyingAddress);
+          const logoSource =
+            underlyingAddress === ethDummyAddress
+              ? require(`../../assets/images/${symbol}-logo.png`)
+              : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
           const decimals = await getDecimals(underlyingAddress);
           const underlyingPrice = await getUnderlyingPrice(
             pTokenAddress,
@@ -235,7 +229,8 @@ function Dashboard() {
           return {
             pTokenAddress,
             underlyingAddress,
-            symbol: await getTokenSymbol(underlyingAddress),
+            symbol,
+            logoSource,
             supplyApy,
             borrowApy,
             underlyingAllowance: await getAllowance(
@@ -335,7 +330,10 @@ function Dashboard() {
       symbol = "SAI";
     } else if (address === ethDummyAddress) {
       symbol = "ETH";
+    } else if (address === "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2") {
+      symbol = "MKR";
     } else {
+      console.log("address", address);
       symbol = await Compound.eth.read(
         address,
         "function symbol() returns (string)",
@@ -346,6 +344,7 @@ function Dashboard() {
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
     }
+    console.log("symbol", symbol);
     return symbol;
   };
 
@@ -992,7 +991,7 @@ function Dashboard() {
           <img
             className="rounded-circle"
             style={{ width: "40px" }}
-            src={require(`../../assets/images/${props.details.symbol}-logo.png`)}
+            src={props.details.logoSource}
             alt=""
           />
         </td>
@@ -1048,7 +1047,7 @@ function Dashboard() {
           <img
             className="rounded-circle"
             style={{ width: "40px" }}
-            src={require(`../../assets/images/${props.details.symbol}-logo.png`)}
+            src={props.details.logoSource}
             alt=""
           />
         </td>
@@ -1116,7 +1115,7 @@ function Dashboard() {
           <img
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
-            src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
+            src={props.selectedMarketDetails.logoSource}
             alt=""
           />
           <ListItemText secondary={`Supply APY`} />
@@ -1214,7 +1213,7 @@ function Dashboard() {
           <img
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
-            src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
+            src={props.selectedMarketDetails.logoSource}
             alt=""
           />
           <ListItemText secondary={`Borrow APY`} />
@@ -1367,14 +1366,17 @@ function Dashboard() {
           </LightTooltip>
           <ListItemSecondaryAction style={{ margin: "0px 15px 0px 0px" }}>
             <span>
-              {`${props.selectedMarketDetails.marketTotalBorrowInTokenUnit
-                ?.div(
-                  props.selectedMarketDetails.marketTotalBorrowInTokenUnit.plus(
-                    props.selectedMarketDetails.underlyingAmount
+              {`${zeroStringIfNullish(
+                props.selectedMarketDetails.marketTotalBorrowInTokenUnit
+                  ?.div(
+                    props.selectedMarketDetails.marketTotalBorrowInTokenUnit.plus(
+                      props.selectedMarketDetails.underlyingAmount
+                    )
                   )
-                )
-                .times(100)
-                .toFixed(2)}%`}
+                  .times(100)
+                  .toFixed(2),
+                2
+              )}%`}
             </span>
           </ListItemSecondaryAction>
         </ListItem>
@@ -1488,7 +1490,7 @@ function Dashboard() {
             <img
               className="rounded-circle"
               style={{ width: "30px", margin: "0px 10px 0px 0px" }}
-              src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
+              src={props.selectedMarketDetails.logoSource}
               alt=""
             />
           )}
@@ -1772,7 +1774,7 @@ function Dashboard() {
             <img
               className="rounded-circle"
               style={{ width: "30px", margin: "0px 10px 0px 0px" }}
-              src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
+              src={props.selectedMarketDetails.logoSource}
               alt=""
             />
           )}
@@ -2033,7 +2035,7 @@ function Dashboard() {
             <img
               className="rounded-circle"
               style={{ width: "30px", margin: "0px 10px 0px 0px" }}
-              src={require(`../../assets/images/${props.selectedMarketDetails.symbol}-logo.png`)}
+              src={props.selectedMarketDetails.logoSource}
               alt=""
             />
           )}
