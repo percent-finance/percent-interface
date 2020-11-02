@@ -59,15 +59,17 @@ function Dashboard() {
   const gasLimit = "250000";
   const gasLimitSupplyDai = "535024";
   const gasLimitSupplySnx = "450000";
+  const gasLimitSupplySusd = "450000";
   const gasLimitWithdrawDai = "550000";
   const gasLimitWithdrawSnx = "550000";
+  const gasLimitWithdrawSusd = "550000";
   const gasLimitWithdraw = "450000";
   const gasLimitEnable = "70000";
   const gasLimitEnableDai = "66537";
   const gasLimitBorrow = "702020";
   const gasLimitBorrowDai = "729897";
   const gasLimitRepayDai = "535024";
-
+  const gasLimitRepaySusd = "400000";
   const gasLimitEnterMarket = "112020";
 
   useEffect(() => {
@@ -167,6 +169,10 @@ function Dashboard() {
       let totalBorrowLimit = new BigNumber(0);
       let yearSupplyInterest = new BigNumber(0);
       let yearBorrowInterest = new BigNumber(0);
+      let yearSupplyPctRewards = new BigNumber(0);
+      let yearBorrowPctRewards = new BigNumber(0);
+      let totalLiquidity = new BigNumber(0);
+      const pctPrice = await getPctPrice();
 
       const details = await Promise.all(
         allMarkets.map(async (pTokenAddress) => {
@@ -196,9 +202,17 @@ function Dashboard() {
             supplyAndBorrowBalance?.borrowBalance
           );
 
+          const marketTotalSupply = (
+            await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
+          )?.times(underlyingPrice);
+
           const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
             pTokenAddress,
             decimals
+          );
+
+          const marketTotalBorrow = marketTotalBorrowInTokenUnit?.times(
+            underlyingPrice
           );
 
           const isEnterMarket = enteredMarkets.includes(pTokenAddress);
@@ -215,17 +229,66 @@ function Dashboard() {
 
           const supplyApy = await getSupplyApy(pTokenAddress);
           const borrowApy = await getBorrowApy(pTokenAddress);
-          yearSupplyInterest = yearSupplyInterest.plus(
-            supplyAndBorrowBalance?.supplyBalance.times(supplyApy).div(100)
-          );
-          yearBorrowInterest = yearBorrowInterest.plus(
-            supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
-          );
+
+          if (
+            supplyAndBorrowBalance?.supplyBalance
+              .times(supplyApy)
+              ?.isGreaterThan(0)
+          ) {
+            yearSupplyInterest = yearSupplyInterest.plus(
+              supplyAndBorrowBalance?.supplyBalance.times(supplyApy)
+            );
+          }
+          if (
+            supplyAndBorrowBalance?.borrowBalance
+              .times(borrowApy)
+              ?.isGreaterThan(0)
+          ) {
+            yearBorrowInterest = yearBorrowInterest.plus(
+              supplyAndBorrowBalance?.borrowBalance.times(borrowApy)
+            );
+          }
+
+          const pctSpeed = await getPctSpeed(pTokenAddress);
+
+          const supplyPctApy = pctSpeed
+            ?.times(((24 * 60 * 60) / blockTime) * 365)
+            ?.times(pctPrice)
+            ?.div(marketTotalSupply);
+          const borrowPctApy = pctSpeed
+            ?.times(((24 * 60 * 60) / blockTime) * 365)
+            ?.times(pctPrice)
+            ?.div(marketTotalBorrow);
+
+          if (
+            supplyAndBorrowBalance?.supplyBalance
+              .times(supplyPctApy)
+              ?.isGreaterThan(0)
+          ) {
+            yearSupplyPctRewards = yearSupplyPctRewards.plus(
+              supplyAndBorrowBalance?.supplyBalance.times(supplyPctApy)
+            );
+          }
+          if (
+            supplyAndBorrowBalance?.borrowBalance
+              .times(borrowPctApy)
+              ?.isGreaterThan(0)
+          ) {
+            yearBorrowPctRewards = yearBorrowPctRewards.plus(
+              supplyAndBorrowBalance?.borrowBalance.times(borrowPctApy)
+            );
+          }
 
           const underlyingAmount = await getUnderlyingAmount(
             pTokenAddress,
             decimals
           );
+
+          const liquidity = +underlyingAmount * +underlyingPrice;
+
+          if (liquidity > 0) {
+            totalLiquidity = totalLiquidity.plus(liquidity);
+          }
 
           return {
             pTokenAddress,
@@ -234,6 +297,8 @@ function Dashboard() {
             logoSource,
             supplyApy,
             borrowApy,
+            supplyPctApy,
+            borrowPctApy,
             underlyingAllowance: await getAllowance(
               underlyingAddress,
               decimals,
@@ -248,22 +313,18 @@ function Dashboard() {
             supplyBalanceInTokenUnit:
               supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
             supplyBalance: supplyAndBorrowBalance?.supplyBalance,
-            marketTotalSupply: (
-              await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
-            )?.times(underlyingPrice),
+            marketTotalSupply,
             borrowBalanceInTokenUnit:
               supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
             borrowBalance: supplyAndBorrowBalance?.borrowBalance,
             marketTotalBorrowInTokenUnit,
-            marketTotalBorrow: marketTotalBorrowInTokenUnit?.times(
-              underlyingPrice
-            ),
+            marketTotalBorrow,
             isEnterMarket,
             underlyingAmount,
             underlyingPrice,
-            liquidity: +underlyingAmount * +underlyingPrice,
+            liquidity,
             collateralFactor,
-            pctSpeed: await getPctSpeed(pTokenAddress),
+            pctSpeed,
             decimals,
           };
         })
@@ -281,9 +342,11 @@ function Dashboard() {
         yearBorrowInterest,
         netApy: yearSupplyInterest
           .minus(yearBorrowInterest)
-          .div(totalSupplyBalance)
-          .times(100),
-        pctPrice: await getPctPrice(),
+          .div(totalSupplyBalance),
+        totalSupplyPctApy: yearSupplyPctRewards?.div(totalSupplyBalance),
+        totalBorrowPctApy: yearBorrowPctRewards?.div(totalBorrowBalance),
+        pctPrice,
+        totalLiquidity,
       });
 
       setAllMarketDetails(details);
@@ -370,13 +433,12 @@ function Dashboard() {
         supplyRatePerBlock = new BigNumber(0);
       }
 
-      const supplyApy =
-        (Math.pow(
+      const supplyApy = new BigNumber(
+        Math.pow(
           (supplyRatePerBlock.toNumber() / mantissa) * blocksPerDay + 1,
           daysPerYear - 1
-        ) -
-          1) *
-        100;
+        ) - 1
+      );
       return supplyApy;
     }
   };
@@ -402,13 +464,12 @@ function Dashboard() {
         borrowRatePerBlock = new BigNumber(0);
       }
 
-      const borrowApy =
-        (Math.pow(
+      const borrowApy = new BigNumber(
+        Math.pow(
           (borrowRatePerBlock.toNumber() / mantissa) * blocksPerDay + 1,
           daysPerYear - 1
-        ) -
-          1) *
-        100;
+        ) - 1
+      );
       return borrowApy;
     }
   };
@@ -684,6 +745,8 @@ function Dashboard() {
           ? gasLimitSupplyDai
           : symbol === "SNX"
           ? gasLimitSupplySnx
+          : symbol === "sUSD"
+          ? gasLimitSupplySusd
           : gasLimit,
       gasPrice: globalState.gasPrice.toString(),
     };
@@ -729,6 +792,8 @@ function Dashboard() {
           ? gasLimitWithdrawDai
           : symbol === "SNX"
           ? gasLimitWithdrawSnx
+          : symbol === "sUSD"
+          ? gasLimitWithdrawSusd
           : gasLimitWithdraw,
       gasPrice: globalState.gasPrice.toString(),
     };
@@ -808,7 +873,12 @@ function Dashboard() {
     const options = {
       network: chainIdToName[parseInt(library.provider.chainId)],
       provider: library.provider,
-      gasLimit: symbol === "DAI" ? gasLimitRepayDai : gasLimit,
+      gasLimit:
+        symbol === "DAI"
+          ? gasLimitRepayDai
+          : symbol === "sUSD"
+          ? gasLimitRepaySusd
+          : gasLimit,
       gasPrice: globalState.gasPrice.toString(),
     };
 
@@ -936,7 +1006,7 @@ function Dashboard() {
   };
 
   const getMaxRepayAmount = (symbol, borrowBalanceInTokenUnit, borrowApy) => {
-    const maxRepayFactor = new BigNumber(1).plus(borrowApy / 100 / 100); // e.g. Borrow APY = 2% => maxRepayFactor = 1.0002
+    const maxRepayFactor = new BigNumber(1).plus(borrowApy / 100); // e.g. Borrow APY = 2% => maxRepayFactor = 1.0002
     if (symbol === "ETH") {
       return borrowBalanceInTokenUnit.times(maxRepayFactor).decimalPlaces(18); // Setting it to a bit larger, this makes sure the user can repay 100%.
     } else {
@@ -1001,7 +1071,7 @@ function Dashboard() {
         </td>
         <td>
           <h6 className="text-muted">
-            {`${props.details.supplyApy?.toFixed(2)}%`}
+            {`${props.details.supplyApy?.times(100).toFixed(2)}%`}
           </h6>
         </td>
         <td>
@@ -1057,7 +1127,7 @@ function Dashboard() {
         </td>
         <td>
           <h6 className="text-muted">
-            {`${props.details.borrowApy?.toFixed(2)}%`}
+            {`${props.details.borrowApy?.times(100).toFixed(2)}%`}
           </h6>
         </td>
         <td>
@@ -1122,9 +1192,9 @@ function Dashboard() {
           <ListItemText secondary={`Supply APY`} />
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
-          >{`${props.selectedMarketDetails.supplyApy?.toFixed(
-            2
-          )}%`}</ListItemSecondaryAction>
+          >{`${props.selectedMarketDetails.supplyApy
+            ?.times(100)
+            .toFixed(2)}%`}</ListItemSecondaryAction>
         </ListItem>
         <ListItem>
           <img
@@ -1137,11 +1207,7 @@ function Dashboard() {
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${zeroStringIfNullish(
-            props.selectedMarketDetails.pctSpeed
-              ?.times(((24 * 60 * 60) / blockTime) * 365 * 100)
-              .times(props.generalDetails.pctPrice)
-              .div(props.selectedMarketDetails.marketTotalSupply)
-              .toFixed(2),
+            props.selectedMarketDetails.supplyPctApy?.times(100).toFixed(2),
             2
           )}%`}</ListItemSecondaryAction>
         </ListItem>
@@ -1220,9 +1286,9 @@ function Dashboard() {
           <ListItemText secondary={`Borrow APY`} />
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
-          >{`${props.selectedMarketDetails.borrowApy?.toFixed(
-            2
-          )}%`}</ListItemSecondaryAction>
+          >{`${props.selectedMarketDetails.borrowApy
+            ?.times(100)
+            .toFixed(2)}%`}</ListItemSecondaryAction>
         </ListItem>
         <ListItem>
           <img
@@ -1235,11 +1301,7 @@ function Dashboard() {
           <ListItemSecondaryAction
             style={{ margin: "0px 15px 0px 0px" }}
           >{`${zeroStringIfNullish(
-            props.selectedMarketDetails.pctSpeed
-              ?.times(((24 * 60 * 60) / blockTime) * 365 * 100)
-              .times(props.generalDetails.pctPrice)
-              .div(props.selectedMarketDetails.marketTotalBorrow)
-              .toFixed(2),
+            props.selectedMarketDetails.borrowPctApy?.times(100).toFixed(2),
             2
           )}%`}</ListItemSecondaryAction>
         </ListItem>
@@ -2202,7 +2264,20 @@ function Dashboard() {
       <Card>
         <Card.Body style={{ padding: "20px 20px 0px 20px" }}>
           <Row>
-            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+            <Col xs={12} lg style={{ margin: "0px 0px 20px 0px" }}>
+              <h6 className="mb-4">Total Value Lock</h6>
+              <div className="row d-flex align-items-center">
+                <div className="col-12">
+                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                    <i className={`fa fa-circle text-c-blue f-10 m-r-15`} />
+                    {`$${convertToLargeNumberRepresentation(
+                      generalDetails.totalLiquidity?.precision(4)
+                    )}`}
+                  </h3>
+                </div>
+              </div>
+            </Col>
+            <Col xs={6} lg style={{ margin: "0px 0px 20px 0px" }}>
               <h6 className="mb-4">Your Supply Balance</h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
@@ -2216,8 +2291,8 @@ function Dashboard() {
                 </div>
               </div>
             </Col>
-            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">
+            <Col xs={6} lg style={{ margin: "0px 0px 20px 0px" }}>
+              <h6>
                 <LightTooltip
                   title="The net annual percentage yield across all of your personal deposits/borrows."
                   placement="bottom-start"
@@ -2230,17 +2305,30 @@ function Dashboard() {
               </h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
-                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                  <h3
+                    className="f-w-300 d-flex align-items-center m-b-0"
+                    style={{ fontSize: "120%" }}
+                  >
                     <i className={`fa fa-circle text-c-green f-10 m-r-15`} />
                     {`${zeroStringIfNullish(
-                      generalDetails.netApy?.toFixed(2),
+                      generalDetails.netApy?.times(100).toFixed(2),
                       2
                     )}%`}
+                    <br />
+                    {`+ ${zeroStringIfNullish(
+                      generalDetails.totalSupplyPctApy?.times(100).toFixed(2),
+                      2
+                    )}% PCT (supply)`}
+                    <br />
+                    {`+ ${zeroStringIfNullish(
+                      generalDetails.totalBorrowPctApy?.times(100).toFixed(2),
+                      2
+                    )}% PCT (borrow)`}
                   </h3>
                 </div>
               </div>
             </Col>
-            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+            <Col xs={6} lg style={{ margin: "0px 0px 20px 0px" }}>
               <h6 className="mb-4">
                 <LightTooltip
                   title="The balance of outstanding value you borrowed from the protocol."
@@ -2264,7 +2352,7 @@ function Dashboard() {
                 </div>
               </div>
             </Col>
-            <Col xs={6} md={3} style={{ margin: "0px 0px 20px 0px" }}>
+            <Col xs={6} lg style={{ margin: "0px 0px 20px 0px" }}>
               <h6 className="mb-4">
                 <LightTooltip
                   title="The maximum amount of value available for you to borrow."
@@ -2329,7 +2417,7 @@ function Dashboard() {
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
                     <i className={`fa fa-circle text-c-green f-10 m-r-15`} />
                     {`${zeroStringIfNullish(
-                      generalDetails.netApy?.toFixed(2),
+                      generalDetails.netApy?.times(100).toFixed(2),
                       2
                     )}%`}
                   </h3>

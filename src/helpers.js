@@ -7,7 +7,9 @@ export const eX = (value, x) => {
 };
 
 export const convertToLargeNumberRepresentation = (value) => {
-  if (+value >= 1e5) {
+  if (!value) {
+    return "0";
+  } else if (+value >= 1e5) {
     return `${eX(value.toString(), -6)}M`;
   } else if (+value >= 1e2) {
     return `${eX(value.toString(), -3)}K`;

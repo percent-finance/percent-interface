@@ -274,6 +274,13 @@ function AdminLayout() {
                   Governance
                 </Nav.Link>
                 <Nav.Link
+                  href="https://github.com/chainsulting/Smart-Contract-Security-Audits/blob/master/Percent%20Finance/02_Smart%20Contract%20Audit%20Percent%20Finance.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Audit
+                </Nav.Link>
+                <Nav.Link
                   href="https://github.com/percent-finance"
                   target="_blank"
                   rel="noopener noreferrer"
