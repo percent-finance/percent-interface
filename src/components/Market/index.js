@@ -2265,7 +2265,7 @@ function Dashboard() {
         <Card.Body style={{ padding: "20px 20px 0px 20px" }}>
           <Row>
             <Col xs={12} lg style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Total Value Lock</h6>
+              <h6 className="mb-4">Total Value Locked</h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
                   <h3 className="f-w-300 d-flex align-items-center m-b-0">
