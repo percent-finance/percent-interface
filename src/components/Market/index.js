@@ -166,6 +166,8 @@ function Dashboard() {
 
       let totalSupplyBalance = new BigNumber(0);
       let totalBorrowBalance = new BigNumber(0);
+      let allMarketsTotalSupplyBalance = new BigNumber(0);
+      let allMarketsTotalBorrowBalance = new BigNumber(0);
       let totalBorrowLimit = new BigNumber(0);
       let yearSupplyInterest = new BigNumber(0);
       let yearBorrowInterest = new BigNumber(0);
@@ -214,6 +216,18 @@ function Dashboard() {
           const marketTotalBorrow = marketTotalBorrowInTokenUnit?.times(
             underlyingPrice
           );
+
+          if (marketTotalSupply?.isGreaterThan(0)) {
+            allMarketsTotalSupplyBalance = allMarketsTotalSupplyBalance.plus(
+              marketTotalSupply
+            );
+          }
+
+          if (marketTotalBorrow?.isGreaterThan(0)) {
+            allMarketsTotalBorrowBalance = allMarketsTotalBorrowBalance.plus(
+              marketTotalBorrow
+            );
+          }
 
           const isEnterMarket = enteredMarkets.includes(pTokenAddress);
 
@@ -334,6 +348,8 @@ function Dashboard() {
         comptrollerAddress,
         totalSupplyBalance,
         totalBorrowBalance,
+        allMarketsTotalSupplyBalance,
+        allMarketsTotalBorrowBalance,
         totalBorrowLimit,
         totalBorrowLimitUsedPercent: totalBorrowBalance
           .div(totalBorrowLimit)
@@ -2265,12 +2281,23 @@ function Dashboard() {
         <Card.Body style={{ padding: "20px 20px 0px 20px" }}>
           <Row>
             <Col xs={12} lg style={{ margin: "0px 0px 20px 0px" }}>
-              <h6 className="mb-4">Total Value Locked</h6>
+              <h6>Market Overview</h6>
               <div className="row d-flex align-items-center">
                 <div className="col-12">
-                  <h3 className="f-w-300 d-flex align-items-center m-b-0">
+                  <h3
+                    className="f-w-300 d-flex align-items-center m-b-0"
+                    style={{ fontSize: "120%" }}
+                  >
                     <i className={`fa fa-circle text-c-blue f-10 m-r-15`} />
-                    {`$${convertToLargeNumberRepresentation(
+                    {`Total Supply: $${convertToLargeNumberRepresentation(
+                      generalDetails.allMarketsTotalSupplyBalance?.precision(4)
+                    )}`}
+                    <br />
+                    {`Total Borrow: $${convertToLargeNumberRepresentation(
+                      generalDetails.allMarketsTotalBorrowBalance?.precision(4)
+                    )}`}
+                    <br />
+                    {`Total Liquidity: $${convertToLargeNumberRepresentation(
                       generalDetails.totalLiquidity?.precision(4)
                     )}`}
                   </h3>
