@@ -1088,6 +1088,11 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.supplyApy?.times(100).toFixed(2)}%`}
+            {props.details.supplyPctApy.isGreaterThan(0) ? (
+              <div>
+                {`+ ${props.details.supplyPctApy?.times(100).toFixed(2)}% PCT`}
+              </div>
+            ) : null}
           </h6>
         </td>
         <td>
@@ -1144,6 +1149,11 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.borrowApy?.times(100).toFixed(2)}%`}
+            {props.details.borrowPctApy.isGreaterThan(0) ? (
+              <div>
+                {`+ ${props.details.borrowPctApy?.times(100).toFixed(2)}% PCT`}
+              </div>
+            ) : null}
           </h6>
         </td>
         <td>
