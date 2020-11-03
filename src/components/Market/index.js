@@ -1151,7 +1151,7 @@ function Dashboard() {
             {`${props.details.borrowApy?.times(100).toFixed(2)}%`}
             {props.details.borrowPctApy.isGreaterThan(0) ? (
               <div>
-                {`+ ${props.details.borrowPctApy?.times(100).toFixed(2)}% PCT`}
+                {`(${props.details.borrowPctApy?.times(100).toFixed(2)}% PCT)`}
               </div>
             ) : null}
           </h6>
