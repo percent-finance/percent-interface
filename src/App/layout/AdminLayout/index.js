@@ -302,6 +302,13 @@ function AdminLayout() {
                   Medium
                 </Nav.Link>
                 <Nav.Link
+                  href="https://percent.substack.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Substack
+                </Nav.Link>
+                <Nav.Link
                   href="https://discord.gg/3sxWhH3"
                   target="_blank"
                   rel="noopener noreferrer"
