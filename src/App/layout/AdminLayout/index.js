@@ -263,6 +263,9 @@ function AdminLayout() {
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="mr-auto"></Nav>
               <Nav className="mr-true">
+                <Nav.Link href="/" target="_blank" rel="noopener noreferrer">
+                  Dashboard
+                </Nav.Link>
                 <Nav.Link href="https://rewards.percent.finance">
                   Rewards
                 </Nav.Link>
@@ -309,21 +312,21 @@ function AdminLayout() {
           </Navbar>
         </Col>
       </Row>
-      <Row
-        className="justify-content-md-center"
-        style={{ margin: "0px 3px 100px 3px" }}
-      >
+      <Row className="justify-content-sm-center" style={{ margin: "0px 3px 100px 3px", height: "10px" }}>
+        <Col xs={12} xl={11}>
+          <div style={{textAlign: "center", color: "red", fontSize: "1.5rem"}}>
+              <div>Money market outage, please read <a href="https://percent-finance.medium.com/important-announcement-d35f9a0df112" class="active">HERE</a>.</div>
+              <div>All functionality currently paused while we work out the solution.</div>
+          </div>
+        </Col>
+      </Row>
+      <Row className="justify-content-md-center" style={{ margin: "0px 3px 100px 3px" }}>
         <Col xs={12} xl={11}>
           {menu}
         </Col>
+        
       </Row>
-      <OtherSnackbar
-        open={otherSnackbarOpen}
-        message={otherSnackbarMessage}
-        onClose={(event, reason) => {
-          if (reason === "clickaway") {
-            return;
-          }
+      <OtherSnackbar open={otherSnackbarOpen} message={otherSnackbarMessage} onClose={(event, reason) => { if (reason === "clickaway") { return;}
           setOtherSnackbarOpen(false);
         }}
       />
