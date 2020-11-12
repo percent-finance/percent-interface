@@ -1,4 +1,4 @@
-export default [
+const default_var = [
     {
         friend_id: 1,
         friend_photo: 'avatar-1.jpg',
@@ -520,3 +520,5 @@ export default [
         ]
     }
 ];
+
+export default default_var;
