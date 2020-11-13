@@ -167,104 +167,113 @@ function Dashboard() {
       let yearSupplyInterest = new BigNumber(0);
       let yearBorrowInterest = new BigNumber(0);
 
+      async function getMarketDetails(pTokenAddress) {
+        const underlyingAddress = await getUnderlyingTokenAddress(
+          pTokenAddress
+        );
+        const symbol = await getTokenSymbol(underlyingAddress);
+        const logoSource =
+          underlyingAddress === ethDummyAddress
+            ? require(`../../assets/images/${symbol}-logo.png`)
+            : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
+        const decimals = await getDecimals(underlyingAddress);
+        const underlyingPrice = await getUnderlyingPrice(
+          pTokenAddress,
+          decimals
+        );
+        const supplyAndBorrowBalance = await getSupplyAndBorrowBalance(
+          pTokenAddress,
+          decimals,
+          underlyingPrice,
+          account
+        );
+        totalSupplyBalance = totalSupplyBalance.plus(
+          supplyAndBorrowBalance?.supplyBalance
+        );
+        totalBorrowBalance = totalBorrowBalance.plus(
+          supplyAndBorrowBalance?.borrowBalance
+        );
+
+        const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
+          pTokenAddress,
+          decimals
+        );
+
+        const isEnterMarket = enteredMarkets.includes(pTokenAddress);
+
+        const collateralFactor = await getCollateralFactor(
+          comptrollerAddress,
+          pTokenAddress
+        );
+        totalBorrowLimit = totalBorrowLimit.plus(
+          isEnterMarket
+            ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
+            : 0
+        );
+
+        const supplyApy = await getSupplyApy(pTokenAddress);
+        const borrowApy = await getBorrowApy(pTokenAddress);
+        yearSupplyInterest = yearSupplyInterest.plus(
+          supplyAndBorrowBalance?.supplyBalance.times(supplyApy).div(100)
+        );
+        yearBorrowInterest = yearBorrowInterest.plus(
+          supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
+        );
+
+        const underlyingAmount = await getUnderlyingAmount(
+          pTokenAddress,
+          decimals
+        );
+
+        return {
+          pTokenAddress,
+          underlyingAddress,
+          symbol,
+          logoSource,
+          supplyApy,
+          borrowApy,
+          underlyingAllowance: await getAllowance(
+            underlyingAddress,
+            decimals,
+            account,
+            pTokenAddress
+          ),
+          walletBalance: await getBalanceOf(
+            underlyingAddress,
+            decimals,
+            account
+          ),
+          supplyBalanceInTokenUnit:
+            supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
+          supplyBalance: supplyAndBorrowBalance?.supplyBalance,
+          marketTotalSupply: (
+            await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
+          )?.times(underlyingPrice),
+          borrowBalanceInTokenUnit:
+            supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
+          borrowBalance: supplyAndBorrowBalance?.borrowBalance,
+          marketTotalBorrowInTokenUnit,
+          marketTotalBorrow: marketTotalBorrowInTokenUnit?.times(
+            underlyingPrice
+          ),
+          isEnterMarket,
+          underlyingAmount,
+          underlyingPrice,
+          liquidity: +underlyingAmount * +underlyingPrice,
+          collateralFactor,
+          pctSpeed: await getPctSpeed(pTokenAddress),
+          decimals,
+        };
+      }
       const details = await Promise.all(
         allMarkets.map(async (pTokenAddress) => {
-          const underlyingAddress = await getUnderlyingTokenAddress(
-            pTokenAddress
-          );
-          const symbol = await getTokenSymbol(underlyingAddress);
-          const logoSource =
-            underlyingAddress === ethDummyAddress
-              ? require(`../../assets/images/${symbol}-logo.png`)
-              : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
-          const decimals = await getDecimals(underlyingAddress);
-          const underlyingPrice = await getUnderlyingPrice(
-            pTokenAddress,
-            decimals
-          );
-          const supplyAndBorrowBalance = await getSupplyAndBorrowBalance(
-            pTokenAddress,
-            decimals,
-            underlyingPrice,
-            account
-          );
-          totalSupplyBalance = totalSupplyBalance.plus(
-            supplyAndBorrowBalance?.supplyBalance
-          );
-          totalBorrowBalance = totalBorrowBalance.plus(
-            supplyAndBorrowBalance?.borrowBalance
-          );
-
-          const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
-            pTokenAddress,
-            decimals
-          );
-
-          const isEnterMarket = enteredMarkets.includes(pTokenAddress);
-
-          const collateralFactor = await getCollateralFactor(
-            comptrollerAddress,
-            pTokenAddress
-          );
-          totalBorrowLimit = totalBorrowLimit.plus(
-            isEnterMarket
-              ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
-              : 0
-          );
-
-          const supplyApy = await getSupplyApy(pTokenAddress);
-          const borrowApy = await getBorrowApy(pTokenAddress);
-          yearSupplyInterest = yearSupplyInterest.plus(
-            supplyAndBorrowBalance?.supplyBalance.times(supplyApy).div(100)
-          );
-          yearBorrowInterest = yearBorrowInterest.plus(
-            supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
-          );
-
-          const underlyingAmount = await getUnderlyingAmount(
-            pTokenAddress,
-            decimals
-          );
-
-          return {
-            pTokenAddress,
-            underlyingAddress,
-            symbol,
-            logoSource,
-            supplyApy,
-            borrowApy,
-            underlyingAllowance: await getAllowance(
-              underlyingAddress,
-              decimals,
-              account,
-              pTokenAddress
-            ),
-            walletBalance: await getBalanceOf(
-              underlyingAddress,
-              decimals,
-              account
-            ),
-            supplyBalanceInTokenUnit:
-              supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
-            supplyBalance: supplyAndBorrowBalance?.supplyBalance,
-            marketTotalSupply: (
-              await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
-            )?.times(underlyingPrice),
-            borrowBalanceInTokenUnit:
-              supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
-            borrowBalance: supplyAndBorrowBalance?.borrowBalance,
-            marketTotalBorrowInTokenUnit,
-            marketTotalBorrow: marketTotalBorrowInTokenUnit?.times(
-              underlyingPrice
-            ),
-            isEnterMarket,
-            underlyingAmount,
-            underlyingPrice,
-            liquidity: +underlyingAmount * +underlyingPrice,
-            collateralFactor,
-            pctSpeed: await getPctSpeed(pTokenAddress),
-            decimals,
-          };
+          try {
+            return await getMarketDetails(pTokenAddress);
+          }
+          catch (ex) {
+            console.log(`Error getting ${pTokenAddress}: ${ex.message}`);
+            return {}
+          }
         })
       );
 
@@ -312,7 +321,7 @@ function Dashboard() {
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
     } catch (error) {
-      if (error.error.code === "CALL_EXCEPTION") {
+      if (error.error.code === "UNPREDICTABLE_GAS_LIMIT") {
         return ethDummyAddress;
       } else {
         throw error;
@@ -366,6 +375,7 @@ function Dashboard() {
           } // [optional] call options, provider, network, ethers.js "overrides"
         );
       } catch (e) {
+        console.log(address, e.message, e.error.error);
         supplyRatePerBlock = new BigNumber(0);
       }
 

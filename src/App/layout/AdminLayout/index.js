@@ -316,7 +316,7 @@ function AdminLayout() {
         <Col xs={12} xl={11}>
           <div style={{textAlign: "center", color: "red", fontSize: "1.5rem"}}>
               <div>Money market outage, please read <a href="https://percent-finance.medium.com/important-announcement-d35f9a0df112" class="active">HERE</a>.</div>
-              <div>All functionality currently paused while we work out the solution.</div>
+              <div>All functionality currently paused while we work out the next steps.</div>
           </div>
         </Col>
       </Row>
