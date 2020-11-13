@@ -1,4 +1,4 @@
-export default {
+const default_var = {
     items: [
         {
             id: 'navigation',
@@ -234,3 +234,5 @@ export default {
         }
     ]
 }
+
+export default default_var;

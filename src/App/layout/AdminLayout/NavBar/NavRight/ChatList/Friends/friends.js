@@ -1,4 +1,4 @@
-export default [
+const default_var = [
         {
             id: 1,
             photo: 'avatar-1.jpg',
@@ -190,3 +190,5 @@ export default [
             time: '15 min ago'
         }
 ];
+
+export default default_var;
