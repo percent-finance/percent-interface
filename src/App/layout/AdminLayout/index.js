@@ -263,18 +263,22 @@ function AdminLayout() {
             <Navbar.Collapse id="basic-navbar-nav">
               <Nav className="mr-auto"></Nav>
               <Nav className="mr-true">
-                <Nav.Link href="/" target="_blank" rel="noopener noreferrer">
-                  Dashboard
-                </Nav.Link>
-                <Nav.Link href="https://rewards.percent.finance">
+                {/* <Nav.Link href="https://rewards.percent.finance">
                   Rewards
-                </Nav.Link>
+                </Nav.Link> */}
                 <Nav.Link
                   href="https://gov.percent.finance/"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Governance
+                </Nav.Link>
+                <Nav.Link
+                  href="https://github.com/chainsulting/Smart-Contract-Security-Audits/blob/master/Percent%20Finance/02_Smart%20Contract%20Audit%20Percent%20Finance.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Audit
                 </Nav.Link>
                 <Nav.Link
                   href="https://github.com/percent-finance"
@@ -296,6 +300,13 @@ function AdminLayout() {
                   rel="noopener noreferrer"
                 >
                   Medium
+                </Nav.Link>
+                <Nav.Link
+                  href="https://percent.substack.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Substack
                 </Nav.Link>
                 <Nav.Link
                   href="https://discord.gg/3sxWhH3"
