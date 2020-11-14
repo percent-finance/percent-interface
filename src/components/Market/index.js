@@ -74,6 +74,7 @@ function Dashboard() {
 
   useEffect(() => {
     updateData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     library,
     account /*, supplyDialogOpen, borrowDialogOpen, enterMarketDialogOpen*/,
