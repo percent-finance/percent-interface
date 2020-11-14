@@ -73,76 +73,18 @@ function Dashboard() {
   const gasLimitEnterMarket = "112020";
 
   useEffect(() => {
-    // (async () => {
-    //   await updateData();
-    // const allDialogsClosed = !supplyDialogOpen && !borrowDialogOpen && !enterMarketDialogOpen;
-    // const getAllDialogsClosed = () => allDialogsClosed;
-    // let interval;
-
-    // if (allDialogsClosed) {
-    //   console.log("allDialogsClosed is true now")
-    //   await updateData();
-
-    //   interval = setInterval(async () => {
-    //     console.log("allDialogsClosed", allDialogsClosed);
-    //     if (allDialogsClosed) {
-    //       await updateData()
-    //     }
-    //   }, 10000);
-    // } else {
-    //   console.log("clearInterval")
-    //   clearInterval(interval);
-    // }
-
-    // return () => clearInterval(interval);
-    // })();
-    // const allDialogsClosed = !supplyDialogOpen && !borrowDialogOpen && !enterMarketDialogOpen;
-    // if (allDialogsClosed) {
     updateData();
-    // }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     library,
     account /*, supplyDialogOpen, borrowDialogOpen, enterMarketDialogOpen*/,
   ]);
 
   const updateData = async () => {
-    // console.log(
-    //   "ethers provider",
-    //   new ethers.providers.Web3Provider(window.ethereum)
-    // );
-    // const providerNetwork = (await provider.getNetwork()).name;
-    // const signer = provider.getSigner();
-    // const signerAddress = await signer.getAddress();
-    // dispatch({
-    //   type: "UPDATE_PROVIDER",
-    //   provider,
-    //   providerNetwork,
-    //   signerAddress,
-    // });
-    // console.log("providerNetwork", providerNetwork);
-    // console.log("signerAddress", signerAddress);
-    // console.log("provider.getBlockNumber()", provider.getBlockNumber());
-    // console.log(
-    //   "library is ethers' provider",
-    //   await library?.getSigner().getAddress()
-    // );
-
-    // const comptrollerAddress = Compound.util.getAddress(
-    //   Compound.Comptroller,
-    //   chainIdToName[parseInt(library?.provider?.chainId)]
-    // );
 
     console.log("updateData start");
 
     const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
-
-    // if (!chainIdToName[parseInt(library?.provider?.chainId)]) {
-    //   // setWarningDialogOpen(true);
-    //   setOtherSnackbarMessage("Please connect to wallet");
-    //   setOtherSnackbarOpen(true);
-    // }
-
+    
     const allMarkets = await Compound.eth.read(
       comptrollerAddress,
       "function getAllMarkets() returns (address[])",
@@ -181,8 +123,9 @@ function Dashboard() {
           pTokenAddress
         );
         const symbol = await getTokenSymbol(underlyingAddress);
+        console.log(symbol, underlyingAddress);
         const logoSource =
-          underlyingAddress === ethDummyAddress
+          symbol === "ETH"
             ? require(`../../assets/images/${symbol}-logo.png`)
             : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
         const decimals = await getDecimals(underlyingAddress);
@@ -203,10 +146,30 @@ function Dashboard() {
           supplyAndBorrowBalance?.borrowBalance
         );
 
+        const marketTotalSupply = (
+          await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
+        )?.times(underlyingPrice);
+
         const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
           pTokenAddress,
           decimals
         );
+
+        const marketTotalBorrow = marketTotalBorrowInTokenUnit?.times(
+          underlyingPrice
+        );
+
+        if (marketTotalSupply?.isGreaterThan(0)) {
+          allMarketsTotalSupplyBalance = allMarketsTotalSupplyBalance.plus(
+            marketTotalSupply
+          );
+        }
+
+        if (marketTotalBorrow?.isGreaterThan(0)) {
+          allMarketsTotalBorrowBalance = allMarketsTotalBorrowBalance.plus(
+            marketTotalBorrow
+          );
+        }
 
         const isEnterMarket = enteredMarkets.includes(pTokenAddress);
 
@@ -233,6 +196,12 @@ function Dashboard() {
           pTokenAddress,
           decimals
         );
+
+        const liquidity = +underlyingAmount * +underlyingPrice;
+
+        if (liquidity > 0) {
+          totalLiquidity = totalLiquidity.plus(liquidity);
+        }
 
         return {
           pTokenAddress,
@@ -1031,7 +1000,7 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.supplyApy?.times(100).toFixed(2)}%`}
-            {props.details.supplyPctApy.isGreaterThan(0) ? (
+            {props.details.supplyPctApy?.isGreaterThan(0) ? (
               <div>
                 {`+ ${props.details.supplyPctApy?.times(100).toFixed(2)}% PCT`}
               </div>
@@ -1092,7 +1061,7 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.borrowApy?.times(100).toFixed(2)}%`}
-            {props.details.borrowPctApy.isGreaterThan(0) ? (
+            {props.details.borrowPctApy?.isGreaterThan(0) ? (
               <div>
                 {`(${props.details.borrowPctApy?.times(100).toFixed(2)}% PCT)`}
               </div>
