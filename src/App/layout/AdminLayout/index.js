@@ -15,6 +15,10 @@ import { useWeb3React } from "@web3-react/core";
 
 import { chainIdToName } from "../../../constants";
 import { zeroStringIfNullish, eX } from "../../../helpers";
+
+import PCTlogo from "../../../assets/images/PCT-logo.png";
+import PCTbrandLogo from "../../../assets/images/PCT-brand-logo.png";
+
 const BigNumber = require("bignumber.js");
 BigNumber.config({ EXPONENTIAL_AT: 1e9 });
 
@@ -84,7 +88,7 @@ function AdminLayout() {
           <img
             className="rounded-circle"
             style={{ width: "16px", margin: "0px 10px 3px 0px" }}
-            src={require(`../../../assets/images/PCT-logo.png`)}
+            src={PCTlogo}
             alt=""
           />
           {`${new BigNumber(zeroStringIfNullish(pctBalance))
@@ -251,7 +255,7 @@ function AdminLayout() {
               <Navbar.Brand style={{ background: "transparent" }}>
                 <img
                   alt=""
-                  src={require("../../../assets/images/PCT-brand-logo.png")}
+                  src={PCTbrandLogo}
                   width="30"
                   height="30"
                   className="d-inline-block align-top"
