@@ -24,6 +24,8 @@ import ArrowRightIcon from "@material-ui/icons/ArrowRight";
 import InfoIcon from "@material-ui/icons/Info";
 import Tooltip from "@material-ui/core/Tooltip";
 import * as colors from "@material-ui/core/colors";
+import PCTlogo from "../../assets/images/PCT-logo.png";
+import ETHlogo from "../../assets/images/ETH-logo.png";
 // import Alert from "@material-ui/lab/Alert";
 
 import { chainIdToName, ethDummyAddress } from "../../constants";
@@ -127,7 +129,7 @@ function Dashboard() {
         console.log(symbol, underlyingAddress);
         const logoSource =
           symbol === "ETH"
-            ? require(`../../assets/images/${symbol}-logo.png`)
+            ? ETHlogo
             : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
         const decimals = await getDecimals(underlyingAddress);
         const underlyingPrice = await getUnderlyingPrice(
@@ -1139,7 +1141,7 @@ function Dashboard() {
           <img
             className="rounded-circle"
             style={{ width: "30px", margin: "0px 10px 0px 0px" }}
-            src={require(`../../assets/images/PCT-logo.png`)}
+            src={PCTlogo}
             alt=""
           />
           <ListItemText secondary={`PCT APY`} />
