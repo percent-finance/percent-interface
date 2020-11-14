@@ -73,76 +73,18 @@ function Dashboard() {
   const gasLimitEnterMarket = "112020";
 
   useEffect(() => {
-    // (async () => {
-    //   await updateData();
-    // const allDialogsClosed = !supplyDialogOpen && !borrowDialogOpen && !enterMarketDialogOpen;
-    // const getAllDialogsClosed = () => allDialogsClosed;
-    // let interval;
-
-    // if (allDialogsClosed) {
-    //   console.log("allDialogsClosed is true now")
-    //   await updateData();
-
-    //   interval = setInterval(async () => {
-    //     console.log("allDialogsClosed", allDialogsClosed);
-    //     if (allDialogsClosed) {
-    //       await updateData()
-    //     }
-    //   }, 10000);
-    // } else {
-    //   console.log("clearInterval")
-    //   clearInterval(interval);
-    // }
-
-    // return () => clearInterval(interval);
-    // })();
-    // const allDialogsClosed = !supplyDialogOpen && !borrowDialogOpen && !enterMarketDialogOpen;
-    // if (allDialogsClosed) {
     updateData();
-    // }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     library,
     account /*, supplyDialogOpen, borrowDialogOpen, enterMarketDialogOpen*/,
   ]);
 
   const updateData = async () => {
-    // console.log(
-    //   "ethers provider",
-    //   new ethers.providers.Web3Provider(window.ethereum)
-    // );
-    // const providerNetwork = (await provider.getNetwork()).name;
-    // const signer = provider.getSigner();
-    // const signerAddress = await signer.getAddress();
-    // dispatch({
-    //   type: "UPDATE_PROVIDER",
-    //   provider,
-    //   providerNetwork,
-    //   signerAddress,
-    // });
-    // console.log("providerNetwork", providerNetwork);
-    // console.log("signerAddress", signerAddress);
-    // console.log("provider.getBlockNumber()", provider.getBlockNumber());
-    // console.log(
-    //   "library is ethers' provider",
-    //   await library?.getSigner().getAddress()
-    // );
-
-    // const comptrollerAddress = Compound.util.getAddress(
-    //   Compound.Comptroller,
-    //   chainIdToName[parseInt(library?.provider?.chainId)]
-    // );
 
     console.log("updateData start");
 
     const comptrollerAddress = process.env.REACT_APP_COMPTROLLER_ADDRESS;
-
-    // if (!chainIdToName[parseInt(library?.provider?.chainId)]) {
-    //   // setWarningDialogOpen(true);
-    //   setOtherSnackbarMessage("Please connect to wallet");
-    //   setOtherSnackbarOpen(true);
-    // }
-
+    
     const allMarkets = await Compound.eth.read(
       comptrollerAddress,
       "function getAllMarkets() returns (address[])",
@@ -176,171 +118,140 @@ function Dashboard() {
       let totalLiquidity = new BigNumber(0);
       const pctPrice = await getPctPrice();
 
+      async function getMarketDetails(pTokenAddress) {
+        const underlyingAddress = await getUnderlyingTokenAddress(
+          pTokenAddress
+        );
+        const symbol = await getTokenSymbol(underlyingAddress);
+        console.log(symbol, underlyingAddress);
+        const logoSource =
+          symbol === "ETH"
+            ? require(`../../assets/images/${symbol}-logo.png`)
+            : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
+        const decimals = await getDecimals(underlyingAddress);
+        const underlyingPrice = await getUnderlyingPrice(
+          pTokenAddress,
+          decimals
+        );
+        const supplyAndBorrowBalance = await getSupplyAndBorrowBalance(
+          pTokenAddress,
+          decimals,
+          underlyingPrice,
+          account
+        );
+        totalSupplyBalance = totalSupplyBalance.plus(
+          supplyAndBorrowBalance?.supplyBalance
+        );
+        totalBorrowBalance = totalBorrowBalance.plus(
+          supplyAndBorrowBalance?.borrowBalance
+        );
+
+        const marketTotalSupply = (
+          await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
+        )?.times(underlyingPrice);
+
+        const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
+          pTokenAddress,
+          decimals
+        );
+
+        const marketTotalBorrow = marketTotalBorrowInTokenUnit?.times(
+          underlyingPrice
+        );
+
+        if (marketTotalSupply?.isGreaterThan(0)) {
+          allMarketsTotalSupplyBalance = allMarketsTotalSupplyBalance.plus(
+            marketTotalSupply
+          );
+        }
+
+        if (marketTotalBorrow?.isGreaterThan(0)) {
+          allMarketsTotalBorrowBalance = allMarketsTotalBorrowBalance.plus(
+            marketTotalBorrow
+          );
+        }
+
+        const isEnterMarket = enteredMarkets.includes(pTokenAddress);
+
+        const collateralFactor = await getCollateralFactor(
+          comptrollerAddress,
+          pTokenAddress
+        );
+        totalBorrowLimit = totalBorrowLimit.plus(
+          isEnterMarket
+            ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
+            : 0
+        );
+
+        const supplyApy = await getSupplyApy(pTokenAddress);
+        const borrowApy = await getBorrowApy(pTokenAddress);
+        yearSupplyInterest = yearSupplyInterest.plus(
+          supplyAndBorrowBalance?.supplyBalance.times(supplyApy).div(100)
+        );
+        yearBorrowInterest = yearBorrowInterest.plus(
+          supplyAndBorrowBalance?.borrowBalance.times(borrowApy).div(100)
+        );
+
+        const underlyingAmount = await getUnderlyingAmount(
+          pTokenAddress,
+          decimals
+        );
+
+        const liquidity = +underlyingAmount * +underlyingPrice;
+
+        if (liquidity > 0) {
+          totalLiquidity = totalLiquidity.plus(liquidity);
+        }
+
+        return {
+          pTokenAddress,
+          underlyingAddress,
+          symbol,
+          logoSource,
+          supplyApy,
+          borrowApy,
+          underlyingAllowance: await getAllowance(
+            underlyingAddress,
+            decimals,
+            account,
+            pTokenAddress
+          ),
+          walletBalance: await getBalanceOf(
+            underlyingAddress,
+            decimals,
+            account
+          ),
+          supplyBalanceInTokenUnit:
+            supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
+          supplyBalance: supplyAndBorrowBalance?.supplyBalance,
+          marketTotalSupply: (
+            await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
+          )?.times(underlyingPrice),
+          borrowBalanceInTokenUnit:
+            supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
+          borrowBalance: supplyAndBorrowBalance?.borrowBalance,
+          marketTotalBorrowInTokenUnit,
+          marketTotalBorrow: marketTotalBorrowInTokenUnit?.times(
+            underlyingPrice
+          ),
+          isEnterMarket,
+          underlyingAmount,
+          underlyingPrice,
+          liquidity: +underlyingAmount * +underlyingPrice,
+          collateralFactor,
+          pctSpeed: await getPctSpeed(pTokenAddress),
+          decimals,
+        };
+      }
       const details = await Promise.all(
         allMarkets.map(async (pTokenAddress) => {
-          const underlyingAddress = await getUnderlyingTokenAddress(
-            pTokenAddress
-          );
-          const symbol = await getTokenSymbol(underlyingAddress);
-          const logoSource =
-            underlyingAddress === ethDummyAddress
-              ? require(`../../assets/images/${symbol}-logo.png`)
-              : `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${underlyingAddress}/logo.png`;
-          const decimals = await getDecimals(underlyingAddress);
-          const underlyingPrice = await getUnderlyingPrice(
-            pTokenAddress,
-            decimals
-          );
-          const supplyAndBorrowBalance = await getSupplyAndBorrowBalance(
-            pTokenAddress,
-            decimals,
-            underlyingPrice,
-            account
-          );
-          totalSupplyBalance = totalSupplyBalance.plus(
-            supplyAndBorrowBalance?.supplyBalance
-          );
-          totalBorrowBalance = totalBorrowBalance.plus(
-            supplyAndBorrowBalance?.borrowBalance
-          );
-
-          const marketTotalSupply = (
-            await getMarketTotalSupplyInTokenUnit(pTokenAddress, decimals)
-          )?.times(underlyingPrice);
-
-          const marketTotalBorrowInTokenUnit = await getMarketTotalBorrowInTokenUnit(
-            pTokenAddress,
-            decimals
-          );
-
-          const marketTotalBorrow = marketTotalBorrowInTokenUnit?.times(
-            underlyingPrice
-          );
-
-          if (marketTotalSupply?.isGreaterThan(0)) {
-            allMarketsTotalSupplyBalance = allMarketsTotalSupplyBalance.plus(
-              marketTotalSupply
-            );
+          try {
+            return await getMarketDetails(pTokenAddress);
           }
-
-          if (marketTotalBorrow?.isGreaterThan(0)) {
-            allMarketsTotalBorrowBalance = allMarketsTotalBorrowBalance.plus(
-              marketTotalBorrow
-            );
+          catch (ex) {
+            console.log(`Error getting ${pTokenAddress}: ${ex.message}`);
+            return {}
           }
-
-          const isEnterMarket = enteredMarkets.includes(pTokenAddress);
-
-          const collateralFactor = await getCollateralFactor(
-            comptrollerAddress,
-            pTokenAddress
-          );
-          totalBorrowLimit = totalBorrowLimit.plus(
-            isEnterMarket
-              ? supplyAndBorrowBalance?.supplyBalance.times(collateralFactor)
-              : 0
-          );
-
-          const supplyApy = await getSupplyApy(pTokenAddress);
-          const borrowApy = await getBorrowApy(pTokenAddress);
-
-          if (
-            supplyAndBorrowBalance?.supplyBalance
-              .times(supplyApy)
-              ?.isGreaterThan(0)
-          ) {
-            yearSupplyInterest = yearSupplyInterest.plus(
-              supplyAndBorrowBalance?.supplyBalance.times(supplyApy)
-            );
-          }
-          if (
-            supplyAndBorrowBalance?.borrowBalance
-              .times(borrowApy)
-              ?.isGreaterThan(0)
-          ) {
-            yearBorrowInterest = yearBorrowInterest.plus(
-              supplyAndBorrowBalance?.borrowBalance.times(borrowApy)
-            );
-          }
-
-          const pctSpeed = await getPctSpeed(pTokenAddress);
-
-          const supplyPctApy = pctSpeed
-            ?.times(((24 * 60 * 60) / blockTime) * 365)
-            ?.times(pctPrice)
-            ?.div(marketTotalSupply);
-          const borrowPctApy = pctSpeed
-            ?.times(((24 * 60 * 60) / blockTime) * 365)
-            ?.times(pctPrice)
-            ?.div(marketTotalBorrow);
-
-          if (
-            supplyAndBorrowBalance?.supplyBalance
-              .times(supplyPctApy)
-              ?.isGreaterThan(0)
-          ) {
-            yearSupplyPctRewards = yearSupplyPctRewards.plus(
-              supplyAndBorrowBalance?.supplyBalance.times(supplyPctApy)
-            );
-          }
-          if (
-            supplyAndBorrowBalance?.borrowBalance
-              .times(borrowPctApy)
-              ?.isGreaterThan(0)
-          ) {
-            yearBorrowPctRewards = yearBorrowPctRewards.plus(
-              supplyAndBorrowBalance?.borrowBalance.times(borrowPctApy)
-            );
-          }
-
-          const underlyingAmount = await getUnderlyingAmount(
-            pTokenAddress,
-            decimals
-          );
-
-          const liquidity = +underlyingAmount * +underlyingPrice;
-
-          if (liquidity > 0) {
-            totalLiquidity = totalLiquidity.plus(liquidity);
-          }
-
-          return {
-            pTokenAddress,
-            underlyingAddress,
-            symbol,
-            logoSource,
-            supplyApy,
-            borrowApy,
-            supplyPctApy,
-            borrowPctApy,
-            underlyingAllowance: await getAllowance(
-              underlyingAddress,
-              decimals,
-              account,
-              pTokenAddress
-            ),
-            walletBalance: await getBalanceOf(
-              underlyingAddress,
-              decimals,
-              account
-            ),
-            supplyBalanceInTokenUnit:
-              supplyAndBorrowBalance?.supplyBalanceInTokenUnit,
-            supplyBalance: supplyAndBorrowBalance?.supplyBalance,
-            marketTotalSupply,
-            borrowBalanceInTokenUnit:
-              supplyAndBorrowBalance?.borrowBalanceInTokenUnit,
-            borrowBalance: supplyAndBorrowBalance?.borrowBalance,
-            marketTotalBorrowInTokenUnit,
-            marketTotalBorrow,
-            isEnterMarket,
-            underlyingAmount,
-            underlyingPrice,
-            liquidity,
-            collateralFactor,
-            pctSpeed,
-            decimals,
-          };
         })
       );
 
@@ -392,7 +303,7 @@ function Dashboard() {
         } // [optional] call options, provider, network, ethers.js "overrides"
       );
     } catch (error) {
-      if (error.error.code === "CALL_EXCEPTION") {
+      if (error.error.code === "UNPREDICTABLE_GAS_LIMIT") {
         return ethDummyAddress;
       } else {
         throw error;
@@ -446,6 +357,7 @@ function Dashboard() {
           } // [optional] call options, provider, network, ethers.js "overrides"
         );
       } catch (e) {
+        console.log(address, e.message, e.error.error);
         supplyRatePerBlock = new BigNumber(0);
       }
 
@@ -1088,7 +1000,7 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.supplyApy?.times(100).toFixed(2)}%`}
-            {props.details.supplyPctApy.isGreaterThan(0) ? (
+            {props.details.supplyPctApy?.isGreaterThan(0) ? (
               <div>
                 {`+ ${props.details.supplyPctApy?.times(100).toFixed(2)}% PCT`}
               </div>
@@ -1149,7 +1061,7 @@ function Dashboard() {
         <td>
           <h6 className="text-muted">
             {`${props.details.borrowApy?.times(100).toFixed(2)}%`}
-            {props.details.borrowPctApy.isGreaterThan(0) ? (
+            {props.details.borrowPctApy?.isGreaterThan(0) ? (
               <div>
                 {`(${props.details.borrowPctApy?.times(100).toFixed(2)}% PCT)`}
               </div>
