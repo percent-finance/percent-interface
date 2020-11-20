@@ -253,6 +253,7 @@ function Dashboard() {
           }
           catch (ex) {
             console.log(`Error getting ${pTokenAddress}: ${ex.message}`);
+            console.log(ex.error);
             return {}
           }
         })
