@@ -296,23 +296,19 @@ function Dashboard() {
   };
 
   const getUnderlyingTokenAddress = async (pTokenAddress) => {
-    try {
-      return await Compound.eth.read(
-        pTokenAddress,
-        "function underlying() returns (address)",
-        [], // [optional] parameters
-        {
-          network: chainIdToName[parseInt(library?.provider?.chainId)],
-          _compoundProvider: library,
-        } // [optional] call options, provider, network, ethers.js "overrides"
-      );
-    } catch (error) {
-      if (error.error.code === "UNPREDICTABLE_GAS_LIMIT") {
-        return ethDummyAddress;
-      } else {
-        throw error;
-      }
+    if (pTokenAddress === "0x45F157b3d3d7C415a0e40012D64465e3a0402C64") {
+      //Hardcoded CEther address as it doesn't have the `underlying` function
+      return ethDummyAddress
     }
+    return await Compound.eth.read(
+      pTokenAddress,
+      "function underlying() returns (address)",
+      [], // [optional] parameters
+      {
+        network: chainIdToName[parseInt(library?.provider?.chainId)],
+        _compoundProvider: library,
+      } // [optional] call options, provider, network, ethers.js "overrides"
+    );
   };
 
   const getTokenSymbol = async (address) => {
