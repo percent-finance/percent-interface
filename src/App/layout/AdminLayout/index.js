@@ -330,7 +330,7 @@ function AdminLayout() {
       <Row className="justify-content-sm-center" style={{ margin: "0px 3px 100px 3px", height: "10px" }}>
         <Col xs={12} xl={11}>
           <div style={{textAlign: "center", color: "red", fontSize: "1.5rem"}}>
-              <div>Money market outage, please read <a href="https://percent-finance.medium.com/important-announcement-d35f9a0df112" class="active">HERE</a>.</div>
+              <div>Money market outage, please read <a href="https://percent-finance.medium.com/percent-finance-incident-post-mortem-d4e419cf35ab" class="active">HERE</a>.</div>
               <div>All functionality currently paused while we work out the next steps.</div>
           </div>
         </Col>
